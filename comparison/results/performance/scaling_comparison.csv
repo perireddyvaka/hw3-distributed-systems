@@ -1,0 +1,5 @@
+parallelism,hw2_mpi_time_sec,hw2_mpi_speedup,hw3_grpc_time_sec,hw3_grpc_speedup
+1,0.17,1.0,0.202,1.0
+2,0.174,0.977,0.2215,0.912
+4,0.213,0.798,0.2609,0.774
+8,0.259,0.656,0.2253,0.897

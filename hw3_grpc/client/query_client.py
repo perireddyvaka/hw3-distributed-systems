@@ -79,15 +79,47 @@ def format_snapshot(snap: weather_pb2.AnalyticsSnapshot) -> str:
     return "\n".join(lines)
 
 
+def format_oracle(snap: weather_pb2.AnalyticsSnapshot) -> str:
+    """Format analytics snapshot to exactly match HW2 sequential oracle format."""
+    lines = [
+        f"TOTAL_MEASUREMENTS {snap.total_measurements}",
+        f"AVERAGE_TEMPERATURE {snap.avg_temperature:.6f}",
+        f"MIN_TEMPERATURE {snap.min_temperature:.6f}",
+        f"MAX_TEMPERATURE {snap.max_temperature:.6f}",
+        f"AVERAGE_HUMIDITY {snap.avg_humidity:.6f}",
+        f"MIN_HUMIDITY {snap.min_humidity:.6f}",
+        f"MAX_HUMIDITY {snap.max_humidity:.6f}",
+        f"AVERAGE_PRESSURE {snap.avg_pressure:.6f}",
+        f"MIN_PRESSURE {snap.min_pressure:.6f}",
+        f"MAX_PRESSURE {snap.max_pressure:.6f}",
+        f"TOTAL_RAINFALL {snap.total_rainfall:.6f}",
+        f"MAX_RAINFALL {snap.max_rainfall:.6f}",
+        f"AVERAGE_WIND_SPEED {snap.avg_wind_speed:.6f}",
+        f"MAX_WIND_SPEED {snap.max_wind_speed:.6f}",
+        f"EXTREME_TEMPERATURE_EVENTS {snap.extreme_temperature_events}",
+        f"HOTTEST_MEASUREMENT {snap.hottest.timestamp} {snap.hottest.station_id} {snap.hottest.temperature:.6f}",
+        f"COLDEST_MEASUREMENT {snap.coldest.timestamp} {snap.coldest.station_id} {snap.coldest.temperature:.6f}",
+        f"BUSIEST_INTERVAL {snap.busiest_interval} {snap.busiest_interval_count}",
+        "TOP_STATIONS",
+    ]
+    for s in snap.top_stations:
+        lines.append(f"{s.station_id} {s.count} {s.avg_temperature:.6f} {s.total_rainfall:.6f}")
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="HW3 Analytics Query Client")
     parser.add_argument("--host", default=cfg.COORDINATOR_HOST)
     parser.add_argument("--port", type=int, default=cfg.COORDINATOR_PORT)
     parser.add_argument("--final", action="store_true", help="Request final analytics only")
+    parser.add_argument("--raw", action="store_true", help="Format output matching HW2 oracle format")
     args = parser.parse_args()
 
     snap = query(host=args.host, port=args.port, final_only=args.final)
-    print(format_snapshot(snap))
+    if args.raw:
+        print(format_oracle(snap))
+    else:
+        print(format_snapshot(snap))
 
 
 if __name__ == "__main__":

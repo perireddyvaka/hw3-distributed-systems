@@ -1,12 +1,5 @@
-size_label,implementation,N,K,S,workers_or_procs,time_seconds,notes
-# This file is a placeholder for future comparison summary data.
-# It will be populated by compare_benchmarks.py after HW3 benchmarks are run.
-# Columns:
-#   size_label          : small / medium / large / very_large
-#   implementation      : hw2_seq / hw2_mpi / hw3_grpc
-#   N                   : number of records
-#   K                   : top-K stations
-#   S                   : number of stations
-#   workers_or_procs    : number of MPI ranks (HW2) or gRPC workers (HW3)
-#   time_seconds        : wall-clock time in seconds
-#   notes               : any relevant notes
+label,ref_file,test_file,status,max_diff,tolerance
+small_HW2_MPI_vs_Seq,comparison/results/correctness/small_seq.txt,comparison/results/correctness/small_mpi.txt,PASS,0.000000e+00,0.0001
+small_HW3_gRPC_vs_Seq,comparison/results/correctness/small_seq.txt,comparison/results/correctness/small_grpc.txt,PASS,0.000000e+00,0.0001
+medium_HW2_MPI_vs_Seq,comparison/results/correctness/medium_seq.txt,comparison/results/correctness/medium_mpi.txt,PASS,0.000000e+00,0.0001
+medium_HW3_gRPC_vs_Seq,comparison/results/correctness/medium_seq.txt,comparison/results/correctness/medium_grpc.txt,PASS,0.000000e+00,0.0001

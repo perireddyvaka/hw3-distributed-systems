@@ -41,14 +41,18 @@ hw2_mpi/scripts/mpi_out_*.txt
 hw3_grpc/benchmarks/__pycache__/
 hw3_grpc/results/final_results/*
 !hw3_grpc/results/final_results/.gitkeep
+!hw3_grpc/results/final_results/*.csv
 hw3_grpc/results/live_runs/*
 !hw3_grpc/results/live_runs/.gitkeep
+!hw3_grpc/results/live_runs/*.txt
 comparison/results/correctness/*
 !comparison/results/correctness/.gitkeep
 comparison/results/performance/*
 !comparison/results/performance/.gitkeep
+!comparison/results/performance/*.csv
 comparison/plots/*
 !comparison/plots/.gitkeep
+!comparison/plots/*.png
 
 # ─── Misc ──────────────────────────────────────────────────────────────────────
 .DS_Store

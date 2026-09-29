@@ -115,6 +115,48 @@ def stop_cluster(procs: List[subprocess.Popen]) -> None:
             p.kill()
 
 
+class ResourceMonitor:
+    """Monitors peak RSS memory usage across a cluster of processes."""
+
+    def __init__(self, pids: List[int], interval: float = 0.05):
+        self.pids = pids
+        self.interval = interval
+        self.peak_rss_mb = 0.0
+        self._stop_event = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+
+    def _sample(self) -> float:
+        total_mb = 0.0
+        for pid in self.pids:
+            try:
+                with open(f"/proc/{pid}/statm", "r") as f:
+                    pages = int(f.read().split()[1])
+                    total_mb += (pages * 4096) / (1024 * 1024)
+            except (OSError, IndexError, ValueError):
+                continue
+        return total_mb
+
+    def _run(self) -> None:
+        while not self._stop_event.is_set():
+            cur = self._sample()
+            if cur > self.peak_rss_mb:
+                self.peak_rss_mb = cur
+            self._stop_event.wait(self.interval)
+
+    def start(self) -> None:
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> float:
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=1.0)
+        final_sample = self._sample()
+        if final_sample > self.peak_rss_mb:
+            self.peak_rss_mb = final_sample
+        return round(self.peak_rss_mb, 2)
+
+
 def ensure_hw2_seq_compiled() -> None:
     """Compile HW2 sequential oracle if not present."""
     if not HW2_SEQ_BIN.exists():
@@ -173,6 +215,8 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
             print(f"[benchmark] Testing with {w} worker(s)...")
 
             procs = start_cluster(w, port, worker_base, k=10)
+            monitor = ResourceMonitor([p.pid for p in procs])
+            monitor.start()
             try:
                 t0 = time.perf_counter()
                 stats = stream(
@@ -183,6 +227,7 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
                     delay=0.0,
                 )
                 t_total = time.perf_counter() - t0
+                peak_mem = monitor.stop()
 
                 if not stats["success"]:
                     raise RuntimeError(f"Streaming failed for {w} workers: {stats.get('error')}")
@@ -199,12 +244,15 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
                     "total_time_sec": round(t_total, 4),
                     "throughput_rec_per_sec": round(throughput, 1),
                     "speedup": round(speedup, 3),
+                    "peak_memory_mb": peak_mem,
                 })
                 print(
                     f"  -> Workers: {w:2d} | Time: {t_total:6.3f}s | "
-                    f"Throughput: {throughput:9.1f} rec/s | Speedup: {speedup:5.2f}x"
+                    f"Throughput: {throughput:9.1f} rec/s | Speedup: {speedup:5.2f}x | "
+                    f"Peak RAM: {peak_mem:.1f} MB"
                 )
             finally:
+                monitor.stop()
                 stop_cluster(procs)
                 time.sleep(0.5)
 
@@ -212,7 +260,10 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     csv_file = RESULTS_DIR / "worker_scaling.csv"
     with open(csv_file, "w", newline="") as f:
-        fields = ["workers", "records", "batch_size", "total_time_sec", "throughput_rec_per_sec", "speedup"]
+        fields = [
+            "workers", "records", "batch_size", "total_time_sec",
+            "throughput_rec_per_sec", "speedup", "peak_memory_mb"
+        ]
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         writer.writerows(results)

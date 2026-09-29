@@ -1,0 +1,8 @@
+dimension,hw2_mpi,hw3_grpc
+System Paradigm,Batch Static Analytics (MPI),Real-Time Streaming Analytics (gRPC)
+Execution Model,"Synchronous, barrier-driven (Scatterv/Reduce)","Asynchronous, event-driven client streaming"
+Communication,Direct memory copy / High-speed IPC,Protobuf serialization over HTTP/2 TCP sockets
+Interactive Querying,No (batch output printed after completion),Yes (interactive sub-4ms live queries during stream)
+Live Dashboard,No,Yes (interactive curses CLI terminal dashboard)
+Throughput (N=100K),"~470,000–580,000 rec/s (compiled C++)","~430,000–565,000 rec/s (batched gRPC)"
+Fault Isolation,Tight rank coupling (rank failure aborts job),Decoupled workers via gRPC connection pooling

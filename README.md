@@ -1,143 +1,152 @@
 # Weather Analytics — Distributed Systems HW2 + HW3
 
-A multi-iteration distributed systems project implementing large-scale
-**weather and environmental data analytics** using two different parallel paradigms:
+A complete distributed systems project implementing large-scale **weather and environmental data analytics** using two complementary parallel paradigms:
 
-| Component | Paradigm | Status |
-|-----------|----------|--------|
-| **HW2** | Sequential + MPI batch processing | ✅ Complete |
-| **HW3** | Real-time streaming analytics with gRPC | 🔲 Structure only (Iteration 1) |
-| **Comparison** | HW2 vs HW3 correctness & performance | 🔲 Placeholder |
-
-> **Iteration 1 establishes the repository structure only. HW2 is preserved as
-> the existing baseline. HW3 implementation will be developed in subsequent iterations.**
+| Component | Paradigm | Status | Key Features |
+|---|---|:---:|---|
+| **HW2** | Sequential + MPI Batch Processing | ✅ Complete | C++17, MPI scatter/gather/reduce, reference oracle (`q8_seq.cpp`) |
+| **HW3** | Real-Time Streaming Analytics with gRPC | ✅ Complete | Multi-worker gRPC streaming, round-robin batch dispatcher, single-pass $O(1)$ state updates, CLI dashboard, sub-4ms live queries |
+| **Comparison** | Cross-Paradigm Evaluation | ✅ Complete | Automated correctness diffing against HW2 oracle, side-by-side performance scaling analysis, comparative plots |
 
 ---
 
-## Project Structure
+## 1. Project Structure
 
 ```
 weather-analytics/
-├── hw2_mpi/          # HW2: Sequential + MPI batch analytics (COMPLETE)
-├── hw3_grpc/         # HW3: gRPC streaming analytics (STRUCTURE ONLY)
-├── comparison/       # Cross-system comparison layer (PLACEHOLDER)
-├── README.md         # This file
-└── requirements.txt  # Top-level Python dependencies
+├── hw2_mpi/          # HW2: Sequential + MPI batch analytics (C++17, OpenMPI)
+│   ├── src/          # q8_seq.cpp (oracle), q8_mpi.cpp (MPI implementation)
+│   ├── dataset/      # generate_dataset.py
+│   ├── scripts/      # benchmark.sh, verify_correctness.sh, run_q8.sh, plot_results.py
+│   └── results/      # results.csv (benchmark output)
+├── hw3_grpc/         # HW3: Distributed Real-Time Streaming Analytics (Python 3, gRPC)
+│   ├── proto/        # weather.proto (service definitions)
+│   ├── coordinator/  # server.py, dispatcher.py (ingestion stream & query service)
+│   ├── worker/       # worker_server.py (parallel partition state accumulators)
+│   ├── client/       # streaming_client.py, query_client.py
+│   ├── dashboard/    # dashboard.py (interactive terminal dashboard)
+│   ├── common/       # analytics.py, aggregation.py (pure incremental logic)
+│   ├── dataset/      # generate_dataset.py (reproducible datasets)
+│   ├── tests/        # unit, concurrency, streaming & correctness tests
+│   ├── benchmarks/   # run_benchmark.py, results/ (.csv), plots/ (.png)
+│   ├── results/      # final_results/ (synced CSVs + plots), live_runs/ (sample outputs)
+│   └── scripts/      # Orchestration and execution scripts
+├── comparison/       # Cross-paradigm comparison layer
+│   ├── compare_results.py      # Field-by-field correctness validator
+│   ├── compare_benchmarks.py   # Performance comparison & plot generator
+│   ├── run_comparison.sh       # Unified comparison pipeline
+│   ├── results/                # correctness/ and performance/ summary CSVs
+│   └── plots/                  # Comparative speedup and runtime plots
+└── README.md         # Top-level documentation (this file)
 ```
+
+> **For full HW3 documentation** — architecture, design decisions, execution walkthrough, correctness proof, and benchmark observations — see [`hw3_grpc/README.md`](hw3_grpc/README.md).
 
 ---
 
-## HW2 — Baseline: Sequential + MPI Batch Processing
+## 2. Quick Start: HW3 gRPC Streaming System
 
-Located in [`hw2_mpi/`](hw2_mpi/).
+### Prerequisites
+```bash
+# Python dependencies
+pip install grpcio grpcio-tools protobuf pytest matplotlib pandas numpy psutil
 
-**What it does:**
-- Reads a weather dataset in a single batch.
-- Computes a comprehensive set of analytics (temperature, humidity, pressure,
-  rainfall, wind speed statistics; hottest/coldest measurements; busiest time
-  interval; top-K stations by record count).
-- Sequential implementation (`q8_seq.cpp`) is the **correctness reference/oracle**.
-- MPI implementation (`q8_mpi.cpp`) distributes computation across P processes
-  using `MPI_Scatterv` for data distribution and `MPI_Reduce`/`MPI_Gather` for
-  result aggregation.
+# Compile HW2 oracle (needed for correctness tests)
+g++ -O2 -std=c++17 -o hw2_mpi/src/q8_seq hw2_mpi/src/q8_seq.cpp
 
-**HW2 structure:**
-```
-hw2_mpi/
-├── src/               # q8_seq.cpp (oracle), q8_mpi.cpp (MPI implementation)
-├── dataset/           # generate_dataset.py
-├── scripts/           # benchmark.sh, verify_correctness.sh, run_q8.sh, plot_results.py
-├── data/              # datasets (gitignored)
-├── results/           # results.csv (benchmark output from cluster run)
-└── README.md          # HW2-specific instructions
+# Generate Protobuf & gRPC stubs
+bash hw3_grpc/scripts/generate_proto.sh
 ```
 
-See [`hw2_mpi/README.md`](hw2_mpi/README.md) for full HW2 usage instructions.
+### Run the Full Test Suite
+```bash
+python3 -m pytest -v
+```
+
+### Run Correctness Verification (HW3 vs HW2 Oracle)
+```bash
+bash hw3_grpc/scripts/run_correctness.sh         # full 12-test suite
+bash hw3_grpc/scripts/run_correctness.sh --fast  # quick 2-test check
+```
+
+### Run All Benchmark Experiments
+```bash
+bash hw3_grpc/scripts/run_benchmarks.sh --all    # full suite (~15-20 min)
+bash hw3_grpc/scripts/run_benchmarks.sh --fast   # reduced sizes (~3 min)
+```
+
+Results are saved to:
+- `hw3_grpc/benchmarks/results/` — CSV data files
+- `hw3_grpc/benchmarks/plots/`   — PNG plot images (5 plots including memory usage)
+- `hw3_grpc/results/final_results/` — synced submission copies
 
 ---
 
-## HW3 — Extension: Real-Time gRPC Streaming Analytics
-
-Located in [`hw3_grpc/`](hw3_grpc/).
-
-> **Status: STRUCTURE ONLY — no implementation yet.**
-
-**Planned architecture:**
-
-```
-Dataset → Streaming Client → Coordinator → Workers → Global Analytics State
-                                                            ↓
-                                              Query Client / Dashboard
-```
-
-**Key design constraints:**
-- Uses the **same dataset format** as HW2 (enabling direct correctness comparison).
-- Final analytics must **match HW2 sequential reference exactly**.
-- Implemented in Python with gRPC / Protocol Buffers.
-- No Kafka, Redis, PostgreSQL, or external infrastructure.
-- Worker count is configurable.
-
-See [`hw3_grpc/README.md`](hw3_grpc/README.md) for the planned HW3 structure.
-
----
-
-## Comparison Layer
-
-Located in [`comparison/`](comparison/).
-
-> **Status: PLACEHOLDER — requires HW3 implementation to be useful.**
-
-**Future purpose:**
-- Run both HW2 and HW3 on identical reproducible datasets.
-- Verify correctness: HW3 must match HW2 sequential oracle.
-- Compare performance: MPI vs gRPC speedup, throughput, latency.
-
----
-
-## Current Project Status
-
-| Milestone | Status |
-|-----------|--------|
-| Iteration 1: Repository structure | ✅ Done |
-| HW2 preservation | ✅ Done (checksums verified) |
-| HW3 proto schema | 🔲 Placeholder |
-| HW3 coordinator implementation | 🔲 Not started |
-| HW3 worker implementation | 🔲 Not started |
-| HW3 streaming client | 🔲 Not started |
-| HW3 correctness tests | 🔲 Not started |
-| HW3 benchmarks | 🔲 Not started |
-| HW2 vs HW3 comparison | 🔲 Not started |
-
----
-
-## Quick Start
-
-### HW2 (already implemented)
-
-See [`hw2_mpi/README.md`](hw2_mpi/README.md).
+## 3. Live Demonstration: Full System Run
 
 ```bash
-# Compile
-g++ -O2 -std=c++17 -o hw2_mpi/src/q8_seq hw2_mpi/src/q8_seq.cpp
-mpicxx -O2 -std=c++17 -o hw2_mpi/src/q8_mpi hw2_mpi/src/q8_mpi.cpp
+# Step 1: Generate dataset
+python3 hw3_grpc/dataset/generate_dataset.py -n 100000 -k 10 -s 50 \
+    -o hw3_grpc/data/weather_100k.txt --seed 42
 
-# Generate a dataset
-python3 hw2_mpi/dataset/generate_dataset.py 500000 20 500 medium.txt 42
+# Step 2: Start cluster (1 coordinator + 4 workers)
+bash hw3_grpc/scripts/start_system.sh --workers 4 --k 10
 
-# Run sequential
-./hw2_mpi/src/q8_seq medium.txt
+# Step 3: (New terminal) Live dashboard
+python3 -m hw3_grpc.dashboard.dashboard --port 50050 --interval 0.5
 
-# Run MPI (4 processes)
-mpirun -np 4 ./hw2_mpi/src/q8_mpi medium.txt
+# Step 4: (New terminal) Stream data
+python3 -m hw3_grpc.client.streaming_client \
+    --dataset hw3_grpc/data/weather_100k.txt --port 50050 \
+    --batch-size 500 --delay 0.0
+
+# Step 5: (New terminal) Query current analytics
+python3 -m hw3_grpc.client.query_client --port 50050
+
+# Step 6: Stop cluster
+bash hw3_grpc/scripts/stop_system.sh
 ```
-
-### HW3 (not yet implemented)
-
-Implementation will be provided in the next iteration.
 
 ---
 
-## Requirements
+## 4. End-to-End Comparison: HW2 (MPI) vs HW3 (gRPC)
 
-- **HW2**: MPI (e.g. OpenMPI or HPCX), g++/mpicxx, Python 3
-- **HW3** (future): Python 3.9+, gRPC, protobuf (see [`hw3_grpc/requirements.txt`](hw3_grpc/requirements.txt))
+```bash
+bash comparison/run_comparison.sh
+```
+
+This command:
+1. Compiles HW2 sequential oracle (`q8_seq`) and MPI binary (`q8_mpi`).
+2. Generates identical reproducible datasets in `comparison/datasets/`.
+3. Executes all implementations and performs field-by-field diffing of all 14 weather metrics.
+4. Records summary rows in `comparison/results/comparison_summary.csv`.
+5. Generates side-by-side performance scaling plots in `comparison/plots/`.
+
+---
+
+## 5. Summary of System Analytics (HW2 Q8 Specification)
+
+Both implementations strictly compute:
+- `TOTAL_MEASUREMENTS`: Ingestion count
+- `AVERAGE_TEMPERATURE`, `MIN_TEMPERATURE`, `MAX_TEMPERATURE`
+- `AVERAGE_HUMIDITY`, `MIN_HUMIDITY`, `MAX_HUMIDITY`
+- `AVERAGE_PRESSURE`, `MIN_PRESSURE`, `MAX_PRESSURE`
+- `TOTAL_RAINFALL`, `MAX_RAINFALL`
+- `AVERAGE_WIND_SPEED`, `MAX_WIND_SPEED`
+- `EXTREME_TEMPERATURE_EVENTS`: Count where $T \ge 40^\circ\text{C}$ or $T \le 0^\circ\text{C}$
+- `HOTTEST_MEASUREMENT` & `COLDEST_MEASUREMENT` (strict tie-breaking: temperature → timestamp → station ID)
+- `BUSIEST_INTERVAL` (1-minute timestamp bucket with maximum count)
+- `TOP_STATIONS`: Top $K$ stations ranked by count (descending), tie-broken by station ID, reporting count, average temperature, and total rainfall.
+
+---
+
+## 6. Benchmark Results Summary
+
+| Experiment | Key Finding |
+|---|---|
+| **Worker Scaling** (N=100K, batch=500) | Peak at W=1 (495K rec/s); localhost IPC overhead grows with workers; memory scales ~44 MB/worker |
+| **Batch Granularity** (N=100K, W=4) | Throughput: 26K rec/s (batch=10) → 565K rec/s (batch=5000); optimal balance at batch=500–1000 |
+| **Query Concurrency** (N=100K, batch=500, W=4) | p50 latency ≤ 3.6 ms under 8 concurrent clients; ingestion throughput drops only ~8% from baseline |
+| **Dataset Scaling** (W=4, batch=500) | HW3 processes 500K records in 1.27s (linear O(N)); HW2 C++ is 4–6× faster but lacks live querying |
+
+For detailed observations and analysis, see [`hw3_grpc/README.md § 8`](hw3_grpc/README.md#8-performance-benchmark-results).

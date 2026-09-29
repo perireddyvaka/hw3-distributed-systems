@@ -16,6 +16,7 @@ Usage:
 import argparse
 import os
 import random
+import sys
 
 
 def generate_dataset(
@@ -49,6 +50,16 @@ def generate_dataset(
 
 
 def main() -> None:
+    if len(sys.argv) >= 5 and not sys.argv[1].startswith("-"):
+        # Positional arguments: <N> <K> <S> <output_file> [seed]
+        n = int(sys.argv[1])
+        k = int(sys.argv[2])
+        s = int(sys.argv[3])
+        out_file = sys.argv[4]
+        seed = int(sys.argv[5]) if len(sys.argv) > 5 else 42
+        generate_dataset(n=n, k=k, s=s, filename=out_file, seed=seed)
+        return
+
     parser = argparse.ArgumentParser(
         description="Generate HW3-compatible weather dataset (same format as HW2)."
     )
