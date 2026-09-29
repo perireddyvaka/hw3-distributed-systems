@@ -334,6 +334,11 @@ for key in compile_hw2 proto_gen unit_tests streaming_tests concurrency_tests co
     echo "| \`$key\` | $icon $status | $msg |"
 done
 
+# Copy .proto and README into submission folder for complete self-contained packaging
+mkdir -p "$SUB/proto"
+cp hw3_grpc/proto/weather.proto "$SUB/proto/"
+cp hw3_grpc/README.md "$SUB/README.md"
+
 cat <<'EOF'
 
 ---
@@ -343,6 +348,9 @@ cat <<'EOF'
 ```
 submission/
 ├── SUBMISSION_SUMMARY.md          ← this file
+├── README.md                      ← complete architecture, execution & analysis guide
+├── proto/
+│   └── weather.proto              ← Protocol Buffer service and message definitions
 ├── tests/
 │   ├── unit_tests.txt             ← pytest: analytics & aggregation unit tests
 │   ├── streaming_tests.txt        ← pytest: gRPC streaming integration tests
@@ -390,9 +398,11 @@ bash run_submission.sh --skip-tests --skip-live-run
 | Metric | Value |
 |---|---|
 | Correctness tests | 12 / 12 permutations passed (< 10⁻⁵ float tolerance) |
-| Peak throughput | 564,904 rec/s (batch_size=5000) |
-| Median query latency | 3.1–3.6 ms under 8 concurrent clients |
-| Dataset scaling | 500K records in 1.27s (linear O(N)) |
+| Peak streaming throughput | 735,862 rec/s (dataset scaling) / 617,620 rec/s (batch scaling) |
+| Worker scaling speedup | 1.15× speedup at 2 workers (651,495 rec/s) |
+| Median query latency | 2.58–3.54 ms under 1 to 8 concurrent clients |
+| Tail query latency (p95) | < 5.7 ms across all query concurrency loads |
+| Dataset scaling | 500K records in 0.70s (linear O(N)) |
 EOF
 } > "$SUMMARY"
 

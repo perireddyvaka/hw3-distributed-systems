@@ -1,0 +1,174 @@
+// hw3_grpc/proto/weather.proto
+// Protocol Buffer schema for HW3 Real-Time Weather Analytics.
+//
+// Three services:
+//   CoordinatorService  — used by streaming client and query/dashboard clients
+//   WorkerService       — used by coordinator to forward records to workers
+//
+// Communication flow:
+//   StreamingClient --[StreamMeasurements]--> CoordinatorService
+//   CoordinatorService --[ProcessBatch]-----> WorkerService (each worker)
+//   QueryClient/Dashboard --[GetAnalytics]--> CoordinatorService
+//   CoordinatorService --[GetWorkerState]---> WorkerService (for aggregation)
+
+syntax = "proto3";
+
+package weather;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core data messages
+// ─────────────────────────────────────────────────────────────────────────────
+
+// WeatherRecord is a single sensor measurement from the dataset.
+// Field layout matches the HW2 input format exactly:
+//   timestamp station_id temperature humidity pressure rainfall wind_speed
+message WeatherRecord {
+  int64  timestamp   = 1;  // Unix epoch seconds
+  int32  station_id  = 2;  // 0-indexed station identifier
+  double temperature = 3;  // degrees Celsius
+  double humidity    = 4;  // percent
+  double pressure    = 5;  // hPa
+  double rainfall    = 6;  // mm
+  double wind_speed  = 7;  // km/h
+}
+
+// RecordBatch is a list of WeatherRecords sent in a single gRPC message.
+// The streaming client can bundle multiple records per message (batch_size).
+message RecordBatch {
+  repeated WeatherRecord records = 1;
+  int64 batch_index              = 2;  // sequential batch number (0-based)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Analytics result messages
+// ─────────────────────────────────────────────────────────────────────────────
+
+// StationStat carries per-station statistics for the TOP_STATIONS output.
+message StationStat {
+  int32  station_id        = 1;
+  int64  count             = 2;
+  double avg_temperature   = 3;
+  double total_rainfall    = 4;
+}
+
+// MeasurementRef identifies a single record (used for hottest/coldest).
+message MeasurementRef {
+  int64  timestamp   = 1;
+  int32  station_id  = 2;
+  double temperature = 3;
+}
+
+// AnalyticsSnapshot is the complete analytics state at a point in time.
+// This mirrors the output format of the HW2 sequential reference (q8_seq.cpp).
+message AnalyticsSnapshot {
+  int64  total_measurements         = 1;
+  double avg_temperature            = 2;
+  double min_temperature            = 3;
+  double max_temperature            = 4;
+  double avg_humidity               = 5;
+  double min_humidity               = 6;
+  double max_humidity               = 7;
+  double avg_pressure               = 8;
+  double min_pressure               = 9;
+  double max_pressure               = 10;
+  double total_rainfall             = 11;
+  double max_rainfall               = 12;
+  double avg_wind_speed             = 13;
+  double max_wind_speed             = 14;
+  int64  extreme_temperature_events = 15;
+  MeasurementRef hottest            = 16;
+  MeasurementRef coldest            = 17;
+  int32  busiest_interval           = 18;  // interval bucket (ts/60)
+  int32  busiest_interval_count     = 19;
+  repeated StationStat top_stations = 20;
+  int32  k                          = 21;  // requested top-K
+}
+
+// WorkerAnalyticsState carries the raw sufficient statistics from a worker,
+// used by the coordinator to merge results across workers.
+message WorkerAnalyticsState {
+  int32  worker_id                  = 1;
+  int64  count                      = 2;
+  double sum_temperature            = 3;
+  double min_temperature            = 4;
+  double max_temperature            = 5;
+  double sum_humidity               = 6;
+  double min_humidity               = 7;
+  double max_humidity               = 8;
+  double sum_pressure               = 9;
+  double min_pressure               = 10;
+  double max_pressure               = 11;
+  double total_rainfall             = 12;
+  double max_rainfall               = 13;
+  double sum_wind_speed             = 14;
+  double max_wind_speed             = 15;
+  int64  extreme_temperature_events = 16;
+  MeasurementRef hottest            = 17;
+  MeasurementRef coldest            = 18;
+  // Interval counts: serialised as parallel arrays (key=interval, value=count)
+  repeated int32 interval_keys      = 19;
+  repeated int32 interval_values    = 20;
+  // Per-station stats: serialised as parallel arrays indexed by station
+  repeated int32  station_ids       = 21;
+  repeated int64  station_counts    = 22;
+  repeated double station_sum_temp  = 23;
+  repeated double station_sum_rain  = 24;
+  int32  k                          = 25;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Request / response wrappers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// StreamResponse is returned by the coordinator after all batches are received.
+message StreamResponse {
+  bool  success         = 1;
+  int64 records_received = 2;
+  string message        = 3;
+}
+
+// BatchAck is returned by a worker after processing a record batch.
+message BatchAck {
+  bool  success    = 1;
+  int32 worker_id  = 2;
+  int64 count      = 3;
+}
+
+// AnalyticsRequest is sent by query/dashboard clients.
+message AnalyticsRequest {
+  // If final_only=true, the coordinator should return the final merged state.
+  // If false (default), return the latest available snapshot.
+  bool final_only = 1;
+}
+
+// StateRequest is sent by coordinator to a worker to retrieve its state.
+message StateRequest {
+  bool include_all = 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Services
+// ─────────────────────────────────────────────────────────────────────────────
+
+// CoordinatorService is exposed by the coordinator process.
+// Used by:  streaming client  (StreamMeasurements)
+//           query/dashboard   (GetAnalytics)
+service CoordinatorService {
+  // Stream weather records from the dataset client to the coordinator.
+  // The client sends RecordBatch messages; coordinator returns a single
+  // StreamResponse when the stream ends.
+  rpc StreamMeasurements(stream RecordBatch) returns (StreamResponse);
+
+  // Query the current (or final) analytics snapshot.
+  rpc GetAnalytics(AnalyticsRequest) returns (AnalyticsSnapshot);
+}
+
+// WorkerService is exposed by each worker process.
+// Used by:  coordinator  (ProcessBatch, GetWorkerState)
+service WorkerService {
+  // The coordinator forwards a batch of records to this worker.
+  rpc ProcessBatch(RecordBatch) returns (BatchAck);
+
+  // The coordinator requests the worker's current analytics state for merging.
+  rpc GetWorkerState(StateRequest) returns (WorkerAnalyticsState);
+}

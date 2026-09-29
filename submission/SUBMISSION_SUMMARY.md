@@ -27,6 +27,9 @@
 ```
 submission/
 ├── SUBMISSION_SUMMARY.md          ← this file
+├── README.md                      ← complete architecture, execution & analysis guide
+├── proto/
+│   └── weather.proto              ← Protocol Buffer service and message definitions
 ├── tests/
 │   ├── unit_tests.txt             ← pytest: analytics & aggregation unit tests
 │   ├── streaming_tests.txt        ← pytest: gRPC streaming integration tests
