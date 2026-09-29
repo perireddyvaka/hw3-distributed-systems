@@ -13,7 +13,6 @@ import argparse
 import logging
 import signal
 import sys
-import time
 from concurrent import futures
 
 import grpc

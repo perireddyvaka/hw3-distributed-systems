@@ -17,7 +17,6 @@ Analytics computed (matching HW2 output exactly):
 """
 
 from __future__ import annotations
-from copy import deepcopy
 from typing import Dict
 
 from hw3_grpc.common.models import (

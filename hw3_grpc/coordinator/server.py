@@ -17,7 +17,6 @@ import logging
 import signal
 import sys
 import threading
-import time
 from concurrent import futures
 from typing import Iterator
 
@@ -30,7 +29,7 @@ except ImportError:
     import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
-from hw3_grpc.common.models import AnalyticsSnapshot, MeasurementRef, StationStat
+from hw3_grpc.common.models import AnalyticsSnapshot
 from hw3_grpc.coordinator.dispatcher import Dispatcher
 from hw3_grpc.coordinator.state import GlobalAnalyticsState
 

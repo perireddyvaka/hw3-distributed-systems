@@ -10,17 +10,10 @@ Usage:
 
 from __future__ import annotations
 import argparse
-import sys
-import time
 import os
+import time
 
 import grpc
-
-try:
-    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
-except ImportError:
-    import weather_pb2
-    import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
 from hw3_grpc.client.query_client import query, format_snapshot
@@ -48,7 +41,8 @@ def dashboard_loop(
                 print(format_snapshot(snap))
                 prev_count = snap.total_measurements
             except grpc.RpcError as e:
-                print(f"[{time.strftime('%H:%M:%S')}] Coordinator not available: {e.details()}")
+                err_msg = e.details() if hasattr(e, "details") else str(e)
+                print(f"[{time.strftime('%H:%M:%S')}] Coordinator not available: {err_msg}")
             time.sleep(interval)
     except KeyboardInterrupt:
         print("\nDashboard stopped.")

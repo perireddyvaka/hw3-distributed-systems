@@ -1,6 +1,5 @@
 """hw3_grpc/tests/test_analytics.py — Unit tests for the analytics engine."""
 
-import pytest
 from hw3_grpc.common.analytics import AnalyticsAccumulator, _hottest_beats, _coldest_beats
 from hw3_grpc.common.models import WeatherRecord, MeasurementRef
 
@@ -122,6 +121,7 @@ class TestAccumulator:
         snap = acc.snapshot()
         assert snap.busiest_interval == bucket_a
         assert snap.busiest_interval_count == 5
+        assert snap.interval_counts[bucket_b] == 3
 
     def test_busiest_interval_tie_lower_wins(self):
         acc = AnalyticsAccumulator()

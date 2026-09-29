@@ -16,7 +16,6 @@ Usage:
 import argparse
 import os
 import random
-import sys
 
 
 def generate_dataset(

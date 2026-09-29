@@ -1,0 +1,15 @@
+{
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/hw3_grpc",
+    "${workspaceFolder}/hw3_grpc/generated"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/hw3_grpc",
+    "${workspaceFolder}/hw3_grpc/generated"
+  ],
+  "python.analysis.ignore": [
+    "**/generated/**"
+  ]
+}

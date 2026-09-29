@@ -1,6 +1,5 @@
 """hw3_grpc/tests/test_aggregation.py — Unit tests for merge/aggregation logic."""
 
-import pytest
 from hw3_grpc.common.analytics import AnalyticsAccumulator
 from hw3_grpc.common.aggregation import merge, merge_two
 from hw3_grpc.common.models import WeatherRecord

@@ -3,20 +3,11 @@
 from __future__ import annotations
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 
-import grpc
 import pytest
 
-try:
-    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
-except ImportError:
-    import weather_pb2
-    import weather_pb2_grpc
-
-from hw3_grpc.common import config as cfg
 from hw3_grpc.dataset.generate_dataset import generate_dataset
 from hw3_grpc.client.query_client import query
 from hw3_grpc.client.streaming_client import stream
@@ -112,5 +103,5 @@ class TestConcurrency:
             assert len(counts) > 0, f"Thread {tid} observed no queries"
             for i in range(1, len(counts)):
                 assert counts[i] >= counts[i - 1], (
-                    f"Thread {tid} count regressed: {counts[i-1]} -> {counts[i]}"
+                    f"Thread {tid} count regressed: {counts[i - 1]} -> {counts[i]}"
                 )

@@ -56,4 +56,4 @@ comparison/plots/*
 *.swp
 *.swo
 .idea/
-.vscode/
+*.pdf

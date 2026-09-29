@@ -39,8 +39,9 @@ if 'from . import weather_pb2 as weather__pb2' not in content:
         'import weather_pb2 as weather__pb2',
         'try:\n    from . import weather_pb2 as weather__pb2\nexcept (ImportError, ValueError):\n    import weather_pb2 as weather__pb2'
     )
-    with open(path, 'w') as f:
-        f.write(content)
+content = content.replace('import warnings\n', '')
+with open(path, 'w') as f:
+    f.write(content)
 "
 
 # Add __init__.py so generated package is cleanly importable

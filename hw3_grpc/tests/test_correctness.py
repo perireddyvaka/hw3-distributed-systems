@@ -12,11 +12,9 @@ The HW2 sequential binary must be compiled first:
 
 from __future__ import annotations
 import os
-import re
 import subprocess
 import sys
 import time
-from pathlib import Path
 from typing import Dict, Any
 
 import pytest
@@ -51,18 +49,6 @@ def _compile_hw2_seq():
         )
         if result.returncode != 0:
             raise RuntimeError(f"Failed to compile HW2 seq:\n{result.stderr}")
-
-
-def _run_hw2_seq(dataset_path: str, k: int) -> Dict[str, Any]:
-    """Run the HW2 sequential oracle and parse its output into a dict."""
-    _compile_hw2_seq()
-    result = subprocess.run(
-        [HW2_SEQ_BIN, dataset_path],
-        capture_output=True, text=True, timeout=60,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"HW2 seq failed:\n{result.stderr}")
-    return _parse_hw2_output(result.stdout, k)
 
 
 def _parse_hw2_output(text: str, k: int) -> Dict[str, Any]:
@@ -104,6 +90,18 @@ def _parse_hw2_output(text: str, k: int) -> Dict[str, Any]:
             out[key] = float(val)
     out["TOP_STATIONS"] = top_stations
     return out
+
+
+def _run_hw2_seq(dataset_path: str, k: int) -> Dict[str, Any]:
+    """Run the HW2 sequential oracle and parse its output into a dict."""
+    _compile_hw2_seq()
+    result = subprocess.run(
+        [HW2_SEQ_BIN, dataset_path],
+        capture_output=True, text=True, timeout=60,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"HW2 seq failed:\n{result.stderr}")
+    return _parse_hw2_output(result.stdout, k)
 
 
 # ── HW3 system helpers ────────────────────────────────────────────────────────
@@ -239,8 +237,8 @@ def _assert_results_match(hw2: Dict, hw3: Dict, tol: float = FLOAT_TOL):
 # ── Test Cases ────────────────────────────────────────────────────────────────
 
 TEST_CASES = [
-    {"n": 1000,  "k": 5,  "s": 10,  "seed": 42,  "label": "small_1k"},
-    {"n": 5000,  "k": 10, "s": 50,  "seed": 99,  "label": "medium_5k"},
+    {"n": 1000, "k": 5, "s": 10, "seed": 42, "label": "small_1k"},
+    {"n": 5000, "k": 10, "s": 50, "seed": 99, "label": "medium_5k"},
     {"n": 10000, "k": 20, "s": 100, "seed": 123, "label": "large_10k"},
     {"n": 99999, "k": 15, "s": 250, "seed": 111, "label": "prime_99999"},  # prime N
 ]

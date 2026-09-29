@@ -6,7 +6,6 @@ using round-robin assignment, then collects worker state for global aggregation.
 
 from __future__ import annotations
 import logging
-import sys
 import threading
 from typing import List
 

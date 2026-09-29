@@ -31,14 +31,13 @@ from __future__ import annotations
 import argparse
 import csv
 import os
-import signal
 import subprocess
 import sys
 import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
 
@@ -49,12 +48,6 @@ import matplotlib.pyplot as plt
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
-
-try:
-    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
-except ImportError:
-    import weather_pb2
-    import weather_pb2_grpc
 
 from hw3_grpc.client.query_client import query
 from hw3_grpc.client.streaming_client import stream
@@ -207,7 +200,10 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
                     "throughput_rec_per_sec": round(throughput, 1),
                     "speedup": round(speedup, 3),
                 })
-                print(f"  -> Workers: {w:2d} | Time: {t_total:6.3f}s | Throughput: {throughput:9.1f} rec/s | Speedup: {speedup:5.2f}x")
+                print(
+                    f"  -> Workers: {w:2d} | Time: {t_total:6.3f}s | "
+                    f"Throughput: {throughput:9.1f} rec/s | Speedup: {speedup:5.2f}x"
+                )
             finally:
                 stop_cluster(procs)
                 time.sleep(0.5)
@@ -216,7 +212,8 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     csv_file = RESULTS_DIR / "worker_scaling.csv"
     with open(csv_file, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["workers", "records", "batch_size", "total_time_sec", "throughput_rec_per_sec", "speedup"])
+        fields = ["workers", "records", "batch_size", "total_time_sec", "throughput_rec_per_sec", "speedup"]
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         writer.writerows(results)
     print(f"[benchmark] Saved CSV results: {csv_file}")
@@ -313,7 +310,8 @@ def run_batch_granularity(n_records: int = 100_000, n_workers: int = 4, batch_si
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     csv_file = RESULTS_DIR / "batch_granularity.csv"
     with open(csv_file, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["batch_size", "records", "workers", "total_time_sec", "throughput_rec_per_sec"])
+        fields = ["batch_size", "records", "workers", "total_time_sec", "throughput_rec_per_sec"]
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         writer.writerows(results)
     print(f"[benchmark] Saved CSV results: {csv_file}")
@@ -347,7 +345,12 @@ def run_batch_granularity(n_records: int = 100_000, n_workers: int = 4, batch_si
 
 # ── Benchmark 3: Query Concurrency & Latency ──────────────────────────────────
 
-def run_query_concurrency(n_records: int = 100_000, batch_size: int = 500, n_workers: int = 4, client_counts: Optional[List[int]] = None):
+def run_query_concurrency(
+    n_records: int = 100_000,
+    batch_size: int = 500,
+    n_workers: int = 4,
+    client_counts: Optional[List[int]] = None,
+):
     """Vary concurrent query clients during active streaming and measure latency."""
     if client_counts is None:
         client_counts = [0, 1, 2, 4, 8]
@@ -375,7 +378,7 @@ def run_query_concurrency(n_records: int = 100_000, batch_size: int = 500, n_wor
                 while not stop_queries.is_set():
                     try:
                         t_start = time.perf_counter()
-                        snap = query(host="localhost", port=port)
+                        _ = query(host="localhost", port=port)
                         t_latency = (time.perf_counter() - t_start) * 1000.0  # ms
                         latencies_ms.append(t_latency)
                     except Exception:
@@ -396,6 +399,8 @@ def run_query_concurrency(n_records: int = 100_000, batch_size: int = 500, n_wor
                     delay=0.0005,  # slight delay to give queries ample time to run concurrently
                 )
                 t_stream = time.perf_counter() - t0
+                if not stats.get("success", False):
+                    print(f"[warning] stream reported failure: {stats.get('error')}")
             finally:
                 stop_queries.set()
                 for t in threads:
@@ -421,7 +426,10 @@ def run_query_concurrency(n_records: int = 100_000, batch_size: int = 500, n_wor
                 "p99_latency_ms": round(p99, 2),
                 "avg_latency_ms": round(avg_lat, 2),
             })
-            print(f"  -> Clients: {q_clients:2d} | Queries: {len(latencies_ms):4d} | Latency p50: {p50:5.2f}ms | p95: {p95:5.2f}ms | Stream TP: {stream_tp:7.1f} rec/s")
+            print(
+                f"  -> Clients: {q_clients:2d} | Queries: {len(latencies_ms):4d} | "
+                f"Latency p50: {p50:5.2f}ms | p95: {p95:5.2f}ms | Stream TP: {stream_tp:7.1f} rec/s"
+            )
 
     # Save CSV
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -532,7 +540,10 @@ def run_dataset_scaling(dataset_sizes: Optional[List[int]] = None, n_workers: in
                 "hw2_seq_time_sec": round(t_seq, 4),
                 "hw2_seq_throughput_rec_per_sec": round(seq_tp, 1),
             })
-            print(f"  -> N: {n:7,d} | HW3: {t_hw3:6.3f}s ({hw3_tp:9.1f} rec/s) | HW2 Seq: {t_seq:6.3f}s ({seq_tp:9.1f} rec/s)")
+            print(
+                f"  -> N: {n:7,d} | HW3: {t_hw3:6.3f}s ({hw3_tp:9.1f} rec/s) | "
+                f"HW2 Seq: {t_seq:6.3f}s ({seq_tp:9.1f} rec/s)"
+            )
 
     # Save CSV
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -552,7 +563,7 @@ def run_dataset_scaling(dataset_sizes: Optional[List[int]] = None, n_workers: in
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
     ns = [r["dataset_size"] for r in results]
-    labels_k = [f"{n//1000}K" for n in ns]
+    labels_k = [f"{n // 1000}K" for n in ns]
     hw3_times = [r["hw3_time_sec"] for r in results]
     seq_times = [r["hw2_seq_time_sec"] for r in results]
     hw3_tps = [r["hw3_throughput_rec_per_sec"] for r in results]

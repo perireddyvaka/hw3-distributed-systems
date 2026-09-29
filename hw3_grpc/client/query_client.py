@@ -6,7 +6,6 @@ Usage:
 
 from __future__ import annotations
 import argparse
-import sys
 
 import grpc
 
@@ -73,7 +72,8 @@ def format_snapshot(snap: weather_pb2.AnalyticsSnapshot) -> str:
     ]
     for s in snap.top_stations:
         lines.append(
-            f"    station={s.station_id:>5}  count={s.count:>8,}  avg_t={s.avg_temperature:.6f}  rain={s.total_rainfall:.6f}"
+            f"    station={s.station_id:>5}  count={s.count:>8,}  "
+            f"avg_t={s.avg_temperature:.6f}  rain={s.total_rainfall:.6f}"
         )
     lines.append("=" * 56)
     return "\n".join(lines)

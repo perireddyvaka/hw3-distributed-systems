@@ -5,10 +5,8 @@ then verify the final analytics match a locally-computed reference.
 """
 
 from __future__ import annotations
-import os
 import subprocess
 import sys
-import tempfile
 import time
 
 import grpc
