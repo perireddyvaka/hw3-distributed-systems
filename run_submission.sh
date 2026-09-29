@@ -64,10 +64,18 @@ for arg in "$@"; do
     esac
 done
 
+# ── Source cluster environment if present ──────────────────────────────────────
+if [ -f "$REPO_ROOT/cluster_env.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$REPO_ROOT/cluster_env.sh"
+fi
+
 # ── Resolve Python ────────────────────────────────────────────────────────────
-if   [ -f "$REPO_ROOT/.venv/bin/python3" ]; then PYTHON="$REPO_ROOT/.venv/bin/python3"
-elif [ -f "$REPO_ROOT/venv/bin/python3"  ]; then PYTHON="$REPO_ROOT/venv/bin/python3"
-else                                              PYTHON="${PYTHON:-python3}"; fi
+if [ -z "${PYTHON:-}" ]; then
+    if   [ -f "$REPO_ROOT/.venv/bin/python3" ]; then PYTHON="$REPO_ROOT/.venv/bin/python3"
+    elif [ -f "$REPO_ROOT/venv/bin/python3"  ]; then PYTHON="$REPO_ROOT/venv/bin/python3"
+    else                                              PYTHON="python3"; fi
+fi
 
 # ── Submission folder ─────────────────────────────────────────────────────────
 SUB="$REPO_ROOT/submission"

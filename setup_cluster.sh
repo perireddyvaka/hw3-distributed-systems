@@ -53,47 +53,158 @@ echo -e "${BOLD}${CYAN}=========================================================
 info "Repository root: $REPO_ROOT"
 info "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
 
+# ── Helper functions for toolchain version verification ──────────────────────
+check_python_version() {
+    local py_cand="$1"
+    if [ ! -x "$py_cand" ] && ! command -v "$py_cand" >/dev/null 2>&1; then
+        return 1
+    fi
+    local ver
+    ver=$("$py_cand" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null) || return 1
+    local major
+    major=$(echo "$ver" | cut -d. -f1)
+    local minor
+    minor=$(echo "$ver" | cut -d. -f2)
+    if [ "$major" -gt 3 ] || ([ "$major" -eq 3 ] && [ "$minor" -ge 8 ]); then
+        echo "$ver"
+        return 0
+    fi
+    return 1
+}
+
+check_gxx_cxx17() {
+    local gxx_cand="$1"
+    if ! command -v "$gxx_cand" >/dev/null 2>&1; then
+        return 1
+    fi
+    echo "int main(){return 0;}" | "$gxx_cand" -x c++ -std=c++17 - -o /dev/null 2>/dev/null
+}
+
+LOADED_PY_MODULE=""
+LOADED_GCC_MODULE=""
+FOUND_PY=""
+PY_VER=""
+
 # =============================================================================
-#  PHASE 1: Toolchain & HPC Modules
+#  PHASE 1: Toolchain & HPC Modules (Dynamic Discovery)
 # =============================================================================
 section "Phase 1: Environment & Toolchain Detection"
 
-# Check for environment modules (common on RCE cluster)
-if command -v module >/dev/null 2>&1; then
-    info "Environment Modules detected (HPC cluster mode)."
-    # Attempt to load standard modules if gcc or python are missing
-    if ! command -v g++ >/dev/null 2>&1; then
-        info "Loading gcc module..."
-        module load gcc 2>/dev/null || module load gcc/9.3.0 2>/dev/null || true
-    fi
-    if ! command -v python3 >/dev/null 2>&1; then
-        info "Loading python3 module..."
-        module load python 2>/dev/null || module load python/3.10 2>/dev/null || true
+# 1. First, test if default python3 satisfies >= 3.8
+if command -v python3 >/dev/null 2>&1; then
+    if PY_VER=$(check_python_version python3); then
+        FOUND_PY="$(which python3)"
+        ok "Default python3 ($PY_VER) satisfies requirement >= 3.8: $FOUND_PY"
     fi
 fi
 
-# 1. Check Python 3
-if ! command -v python3 >/dev/null 2>&1; then
-    fail "python3 not found in PATH. Please load python3 module or install Python >= 3.8."
+# 2. If default python3 is older (e.g. Python 3.6 on older RCE nodes), search dynamically:
+if [ -z "$FOUND_PY" ]; then
+    DEF_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "not found")
+    warn "Default python3 ($DEF_VER) is older than 3.8. Scanning for compatible Python on cluster..."
+
+    # 2a. Check Environment Modules (Lmod / Environment Modules on HPC)
+    if command -v module >/dev/null 2>&1; then
+        info "Searching Environment Modules for Python >= 3.8..."
+        # Query module avail for candidate modules
+        AVAIL_MODS=$(module -t avail 2>&1 | grep -iE '^(python|miniconda|anaconda)' | tr '\n' ' ' || true)
+        CANDIDATE_MODULES=(
+            "python/3.11" "python/3.10" "python/3.9" "python/3.8" "python/3.12"
+            "python3/3.10" "python3/3.9" "python3/3.8" "python3" "python"
+            "miniconda3" "anaconda3" "miniconda" "anaconda"
+        )
+        for mod in "${CANDIDATE_MODULES[@]}" $AVAIL_MODS; do
+            if [ -z "$mod" ]; then continue; fi
+            if module load "$mod" 2>/dev/null; then
+                if PY_VER=$(check_python_version python3); then
+                    FOUND_PY="$(which python3)"
+                    LOADED_PY_MODULE="$mod"
+                    ok "Loaded cluster module '$mod' → Python $PY_VER active ($FOUND_PY)"
+                    break
+                fi
+            fi
+        done
+    fi
+
+    # 2b. Check explicit binary names in PATH
+    if [ -z "$FOUND_PY" ]; then
+        for bin in python3.12 python3.11 python3.10 python3.9 python3.8; do
+            if command -v "$bin" >/dev/null 2>&1; then
+                if PY_VER=$(check_python_version "$bin"); then
+                    FOUND_PY="$(which "$bin")"
+                    ok "Found compatible Python binary in PATH: $FOUND_PY ($PY_VER)"
+                    break
+                fi
+            fi
+        done
+    fi
+
+    # 2c. Check standard filesystem paths (Conda, Software Collections, /usr/local, /opt)
+    if [ -z "$FOUND_PY" ]; then
+        SEARCH_PATHS=(
+            "$HOME/miniconda3/bin/python3"
+            "$HOME/anaconda3/bin/python3"
+            "$HOME/.conda/envs/*/bin/python3"
+            "/opt/rh/rh-python38/root/usr/bin/python3"
+            "/opt/rh/rh-python39/root/usr/bin/python3"
+            "/opt/rh/rh-python310/root/usr/bin/python3"
+            "/usr/local/bin/python3.10"
+            "/usr/local/bin/python3.9"
+            "/usr/local/bin/python3.8"
+            "/usr/bin/python3.10"
+            "/usr/bin/python3.9"
+            "/usr/bin/python3.8"
+            "/opt/python/*/bin/python3"
+        )
+        for sp in "${SEARCH_PATHS[@]}"; do
+            for p in $sp; do
+                if [ -x "$p" ]; then
+                    if PY_VER=$(check_python_version "$p"); then
+                        FOUND_PY="$p"
+                        ok "Found compatible Python binary at: $FOUND_PY ($PY_VER)"
+                        break 2
+                    fi
+                fi
+            done
+        done
+    fi
+fi
+
+# 3. Final verification for Python
+if [ -z "$FOUND_PY" ]; then
+    fail "No Python >= 3.8 found on this cluster node."
+    echo "    On the RCE cluster, please run one of:"
+    echo "        module avail python"
+    echo "        module load python/3.10   (or python/3.8, anaconda3, etc.)"
     exit 1
 fi
 
-PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-PY_MAJOR=$(echo "$PY_VER" | cut -d. -f1)
-PY_MINOR=$(echo "$PY_VER" | cut -d. -f2)
+ok "Selected Python for cluster execution: $FOUND_PY (version $PY_VER)"
 
-if [ "$PY_MAJOR" -lt 3 ] || ([ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 8 ]); then
-    fail "Python version >= 3.8 is required (found Python $PY_VER)."
+# 4. Check C++ Compiler with C++17 support
+if ! check_gxx_cxx17 g++; then
+    warn "Default g++ does not support -std=c++17. Searching for modern GCC module..."
+    if command -v module >/dev/null 2>&1; then
+        GCC_MODULES=("gcc/9.3.0" "gcc/10.2.0" "gcc/11.2.0" "gcc/8.3.0" "gcc" "devtoolset-9" "devtoolset-8" "devtoolset-10")
+        AVAIL_GCC=$(module -t avail 2>&1 | grep -iE '^(gcc|devtoolset)' | tr '\n' ' ' || true)
+        for m in "${GCC_MODULES[@]}" $AVAIL_GCC; do
+            if [ -z "$m" ]; then continue; fi
+            if module load "$m" 2>/dev/null; then
+                if check_gxx_cxx17 g++; then
+                    LOADED_GCC_MODULE="$m"
+                    ok "Loaded GCC module '$m' → $(g++ --version | head -1)"
+                    break
+                fi
+            fi
+        done
+    fi
+fi
+
+if ! check_gxx_cxx17 g++; then
+    fail "g++ with C++17 support not found. Please run 'module load gcc' or load a devtoolset."
     exit 1
 fi
-ok "Python $PY_VER detected at $(which python3)"
-
-# 2. Check C++ Compiler (g++)
-if ! command -v g++ >/dev/null 2>&1; then
-    fail "g++ compiler not found. Required for HW2 sequential reference oracle."
-    exit 1
-fi
-ok "C++ compiler detected: $(g++ --version | head -1)"
+ok "C++ compiler verified: $(g++ --version | head -1)"
 
 # =============================================================================
 #  PHASE 2: Python Virtual Environment & Packages
@@ -101,23 +212,26 @@ ok "C++ compiler detected: $(g++ --version | head -1)"
 section "Phase 2: Python Environment & Dependencies"
 
 VENV_DIR="$REPO_ROOT/.venv"
-PY_EXEC="$(which python3)"
-PIP_EXEC="$(which pip || which pip3 || echo true)"
+PY_EXEC="$FOUND_PY"
+PIP_EXEC="$(dirname "$PY_EXEC")/pip"
+if [ ! -x "$PIP_EXEC" ]; then
+    PIP_EXEC="$(which pip3 || which pip || echo true)"
+fi
 
-# First check: Are required packages already installed in system/user environment?
+# First check: Are required packages already installed in this Python?
 ALREADY_INSTALLED=0
 if "$PY_EXEC" -c "import grpc, google.protobuf, pytest, matplotlib, pandas, numpy, psutil" 2>/dev/null; then
     ALREADY_INSTALLED=1
 fi
 
 if [ "$ALREADY_INSTALLED" -eq 1 ] && [ "$FORCE_VENV" -eq 0 ]; then
-    ok "All required Python packages are already installed in current environment."
+    ok "All required Python packages are already present in $PY_EXEC."
     info "Skipping redundant package download."
 else
     if [ "$USE_VENV" -eq 1 ]; then
         if [ ! -d "$VENV_DIR" ]; then
-            info "Creating virtual environment at $VENV_DIR ..."
-            python3 -m venv "$VENV_DIR"
+            info "Creating virtual environment at $VENV_DIR using $PY_EXEC ..."
+            "$PY_EXEC" -m venv "$VENV_DIR"
         fi
         # Activate virtual environment
         # shellcheck disable=SC1091
@@ -244,9 +358,26 @@ export REPO_ROOT="$REPO_ROOT"
 export PROJECT_ROOT="$REPO_ROOT"
 export PYTHONPATH="\$REPO_ROOT:\${PYTHONPATH:-}"
 
-# Virtual environment activation
+EOF
+
+if [ -n "$LOADED_PY_MODULE" ]; then
+    echo "# Cluster Python Module" >> "$ENV_FILE"
+    echo "module load $LOADED_PY_MODULE 2>/dev/null || true" >> "$ENV_FILE"
+fi
+if [ -n "$LOADED_GCC_MODULE" ]; then
+    echo "# Cluster GCC Module" >> "$ENV_FILE"
+    echo "module load $LOADED_GCC_MODULE 2>/dev/null || true" >> "$ENV_FILE"
+fi
+
+cat <<EOF >> "$ENV_FILE"
+
+# Python executable
 if [ -f "$VENV_DIR/bin/activate" ]; then
     source "$VENV_DIR/bin/activate"
+    export PYTHON="$VENV_DIR/bin/python3"
+else
+    export PYTHON="$PY_EXEC"
+    export PATH="\$(dirname "$PY_EXEC"):\$PATH"
 fi
 
 # Export Slurm node variables if present
