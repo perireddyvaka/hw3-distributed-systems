@@ -1,22 +1,50 @@
 #!/bin/bash
 # hw3_grpc/scripts/run_correctness.sh
+# Run the end-to-end HW3 vs HW2 correctness verification.
 #
-# STATUS: PLACEHOLDER — implement in the next iteration.
+# Prerequisites:
+#   - HW2 sequential binary compiled:
+#       g++ -O2 -std=c++17 -o hw2_mpi/src/q8_seq hw2_mpi/src/q8_seq.cpp
+#   - Python deps installed: pip install grpcio grpcio-tools pytest
+#   - Proto generated: bash hw3_grpc/scripts/generate_proto.sh
 #
-# Future responsibility:
-#   End-to-end correctness test comparing HW3 output to HW2 sequential oracle.
-#
-#   Approximate sequence:
-#     1. Generate a reproducible dataset (fixed seed).
-#     2. Run HW2 sequential oracle (hw2_mpi/src/q8_seq) to get reference output.
-#     3. Start HW3 system (coordinator + workers).
-#     4. Stream the dataset through HW3 pipeline.
-#     5. Query final analytics from coordinator.
-#     6. Compare HW3 output to reference output (field-by-field diff).
-#     7. Report PASS / FAIL per test case.
-#
-#   Test cases should include multiple N, K, S, seed combinations
-#   and multiple worker counts (1, 2, 4, 8).
+# Usage:
+#   bash hw3_grpc/scripts/run_correctness.sh [--fast]
+#   --fast: run only 1 small test case with 1-2 workers
 
-echo "[run_correctness.sh] PLACEHOLDER — not yet implemented." >&2
-exit 1
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO_ROOT"
+
+FAST=${1:-""}
+
+echo "========================================"
+echo "  HW3 Correctness Verification"
+echo "========================================"
+
+# Compile HW2 seq if needed
+if [ ! -f hw2_mpi/src/q8_seq ]; then
+    echo "[correctness] Compiling HW2 sequential oracle..."
+    g++ -O2 -std=c++17 -o hw2_mpi/src/q8_seq hw2_mpi/src/q8_seq.cpp
+fi
+
+# Generate proto if needed
+if [ ! -f hw3_grpc/generated/weather_pb2.py ]; then
+    bash hw3_grpc/scripts/generate_proto.sh
+fi
+
+if [ "$FAST" = "--fast" ]; then
+    echo "[correctness] Running FAST subset (1 test case x 2 worker configs)..."
+    python3 -m pytest hw3_grpc/tests/test_correctness.py \
+        -m "integration and correctness" \
+        -k "small_1k and (n_workers0 or n_workers1)" \
+        -v --tb=short
+else
+    echo "[correctness] Running FULL correctness suite (4 cases x 3 worker configs)..."
+    python3 -m pytest hw3_grpc/tests/test_correctness.py \
+        -m "integration and correctness" \
+        -v --tb=short
+fi
+
+echo ""
+echo "[correctness] Complete."

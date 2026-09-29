@@ -1,24 +1,28 @@
 #!/bin/bash
 # hw3_grpc/scripts/generate_proto.sh
-#
-# STATUS: PLACEHOLDER — implement in the next iteration.
-#
-# Future responsibility:
-#   Generate Python gRPC stubs from hw3_grpc/proto/weather.proto.
-#
-#   Expected command (approximate):
-#     python -m grpc_tools.protoc \
-#         -I hw3_grpc/proto \
-#         --python_out=hw3_grpc/generated \
-#         --grpc_python_out=hw3_grpc/generated \
-#         hw3_grpc/proto/weather.proto
-#
-#   Generated files will be placed in hw3_grpc/generated/:
-#     weather_pb2.py
-#     weather_pb2_grpc.py
-#
-# NOTE: Do NOT commit generated files to version control.
-#       Run this script after any change to weather.proto.
+# Generate Python gRPC stubs from hw3_grpc/proto/weather.proto.
+# Run from the repository root: bash hw3_grpc/scripts/generate_proto.sh
 
-echo "[generate_proto.sh] PLACEHOLDER — not yet implemented." >&2
-exit 1
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+PROTO_DIR="$REPO_ROOT/hw3_grpc/proto"
+OUT_DIR="$REPO_ROOT/hw3_grpc/generated"
+
+echo "[generate_proto] Generating Python gRPC stubs..."
+echo "[generate_proto] Proto:  $PROTO_DIR/weather.proto"
+echo "[generate_proto] Output: $OUT_DIR"
+
+mkdir -p "$OUT_DIR"
+
+python3 -m grpc_tools.protoc \
+    -I "$PROTO_DIR" \
+    --python_out="$OUT_DIR" \
+    --grpc_python_out="$OUT_DIR" \
+    "$PROTO_DIR/weather.proto"
+
+# Add __init__.py so generated package is importable
+touch "$OUT_DIR/__init__.py"
+
+echo "[generate_proto] Done. Generated files:"
+ls "$OUT_DIR"

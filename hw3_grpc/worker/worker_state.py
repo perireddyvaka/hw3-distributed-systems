@@ -1,20 +1,36 @@
-"""
-hw3_grpc/worker/worker_state.py — Worker-local analytics state.
+"""hw3_grpc/worker/worker_state.py — Worker-local analytics state."""
 
-STATUS: PLACEHOLDER — implementation deferred to next iteration.
+from __future__ import annotations
+import threading
 
-Future responsibility:
-    - Maintain a worker-local AnalyticsSnapshot for all records received
-      by this worker.
-    - Use the analytics logic from common/analytics.py to process each
-      incoming WeatherRecord and update local state.
-    - Expose the local snapshot for coordinator collection via GetLocalState.
-    - Thread-safety is required if the worker gRPC server uses multiple threads.
+from hw3_grpc.common.analytics import AnalyticsAccumulator
+from hw3_grpc.common.models import AnalyticsSnapshot, WeatherRecord
 
-Notes:
-    - Worker state is a strict subset of global state.
-    - The global state is formed by merging all worker states via
-      common/aggregation.py — worker_state.py itself does NOT do global aggregation.
-"""
 
-# TODO (implementation iteration): implement WorkerLocalState class
+class WorkerLocalState:
+    """Thread-safe container for a single worker's local analytics state.
+
+    The worker accumulates records incrementally. The coordinator calls
+    get_snapshot() to retrieve the current state for global aggregation.
+    """
+
+    def __init__(self, worker_id: int, k: int = 10) -> None:
+        self.worker_id = worker_id
+        self._lock = threading.Lock()
+        self._acc = AnalyticsAccumulator(k=k)
+
+    def process_records(self, records: list[WeatherRecord]) -> None:
+        """Process a list of records and update local state (thread-safe)."""
+        with self._lock:
+            for rec in records:
+                self._acc.add(rec)
+
+    def get_snapshot(self) -> AnalyticsSnapshot:
+        """Return a consistent snapshot of the current local state (thread-safe)."""
+        with self._lock:
+            return self._acc.snapshot()
+
+    @property
+    def count(self) -> int:
+        with self._lock:
+            return self._acc.count

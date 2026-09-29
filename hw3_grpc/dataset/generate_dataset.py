@@ -1,35 +1,69 @@
-"""
-hw3_grpc/dataset/generate_dataset.py — HW3-compatible dataset generator.
+"""hw3_grpc/dataset/generate_dataset.py — HW3 dataset generator.
 
-STATUS: PLACEHOLDER — implementation deferred to next iteration.
+Produces reproducible weather datasets in the EXACT same format as HW2.
+Compatible with hw2_mpi/dataset/generate_dataset.py (same random logic, same seed).
 
-Future responsibility:
-    Generate reproducible weather datasets in the EXACT same format as the
-    HW2 generator (hw2_mpi/dataset/generate_dataset.py) so that correctness
-    comparisons between HW2 and HW3 are meaningful.
-
-Dataset format (unchanged from HW2):
-    Line 1:      N K S
+Format:
+    Line 1:       N K S
     Lines 2..N+1: timestamp station_id temperature humidity pressure rainfall wind_speed
 
-    where:
-        timestamp   : int   (Unix epoch seconds)
-        station_id  : int   (0 to S-1)
-        temperature : float (degrees Celsius)
-        humidity    : float (percent)
-        pressure    : float (hPa)
-        rainfall    : float (mm)
-        wind_speed  : float (km/h)
-
-IMPORTANT:
-    - Do NOT change the HW2 dataset format.
-    - Do NOT duplicate or modify hw2_mpi/dataset/generate_dataset.py directly.
-    - This module may simply import and re-export the HW2 generator function,
-      or it may be an independent equivalent implementation.
-    - The seed must be reproducible so that HW2 and HW3 use identical datasets.
-
-Usage (future):
-    python hw3_grpc/dataset/generate_dataset.py <N> <K> <S> <output_file> [seed]
+Usage:
+    python hw3_grpc/dataset/generate_dataset.py \\
+        --records 100000 --top-k 10 --stations 100 \\
+        --output hw3_grpc/data/generated/data.txt [--seed 42]
 """
 
-# TODO (implementation iteration): implement or import generate_dataset()
+import argparse
+import random
+import sys
+
+
+def generate_dataset(
+    n: int, k: int, s: int, filename: str, seed: int = 42
+) -> None:
+    """Generate a reproducible weather dataset.
+
+    Parameters match the HW2 generator exactly for cross-system compatibility:
+        n  = number of measurements
+        k  = top-K stations parameter
+        s  = number of stations (station IDs: 0 to s-1)
+    """
+    random.seed(seed)
+    with open(filename, "w") as f:
+        f.write(f"{n} {k} {s}\n")
+        for _ in range(n):
+            ts = random.randint(1600000000, 1600008640)
+            st = random.randint(0, s - 1)
+            temp = round(random.uniform(-10.0, 50.0), 6)
+            hum = round(random.uniform(10.0, 100.0), 6)
+            pres = round(random.uniform(900.0, 1100.0), 6)
+            rain = round(random.uniform(0.0, 100.0), 6)
+            wind = round(random.uniform(0.0, 150.0), 6)
+            f.write(
+                f"{ts} {st} {temp:.6f} {hum:.6f} {pres:.6f} {rain:.6f} {wind:.6f}\n"
+            )
+    print(f"Generated {n} records → {filename}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Generate HW3-compatible weather dataset (same format as HW2)."
+    )
+    parser.add_argument("--records", "-n", type=int, required=True, help="Number of measurements (N)")
+    parser.add_argument("--top-k", "-k", type=int, default=10, help="Top-K stations parameter")
+    parser.add_argument("--stations", "-s", type=int, required=True, help="Number of stations (S)")
+    parser.add_argument("--output", "-o", required=True, help="Output file path")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
+    args = parser.parse_args()
+
+    generate_dataset(
+        n=args.records,
+        k=args.top_k,
+        s=args.stations,
+        filename=args.output,
+        seed=args.seed,
+    )
+
+
+if __name__ == "__main__":
+    main()

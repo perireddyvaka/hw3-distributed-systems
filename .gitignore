@@ -20,9 +20,8 @@ build/
 venv/
 env/
 
-# ─── gRPC generated stubs (regenerate with generate_proto.sh) ──────────────────
-hw3_grpc/generated/*
-!hw3_grpc/generated/.gitkeep
+# ─── gRPC generated stubs ─────────────────────────────────────────────────────
+hw3_grpc/generated/__pycache__/
 
 # ─── Datasets (large files — generate locally) ─────────────────────────────────
 hw2_mpi/data/*
@@ -38,11 +37,8 @@ hw2_mpi/scripts/test_data.txt
 hw2_mpi/scripts/seq_out.txt
 hw2_mpi/scripts/mpi_out_*.txt
 
-# ─── Benchmark / plot output (generated during runs) ──────────────────────────
-hw3_grpc/benchmarks/results/*
-!hw3_grpc/benchmarks/results/.gitkeep
-hw3_grpc/benchmarks/plots/*
-!hw3_grpc/benchmarks/plots/.gitkeep
+# ─── Benchmark / plot output ──────────────────────────────────────────────────
+hw3_grpc/benchmarks/__pycache__/
 hw3_grpc/results/final_results/*
 !hw3_grpc/results/final_results/.gitkeep
 hw3_grpc/results/live_runs/*

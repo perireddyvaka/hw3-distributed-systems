@@ -1,19 +1,50 @@
 #!/bin/bash
 # hw3_grpc/scripts/run_benchmarks.sh
+# Run the complete suite of HW3 gRPC performance benchmark experiments.
 #
-# STATUS: PLACEHOLDER — implement in the next iteration.
+# Usage:
+#   bash hw3_grpc/scripts/run_benchmarks.sh [--all | --fast | --experiment <scaling|batch|query|size>]
 #
-# Future responsibility:
-#   Run the full suite of HW3 benchmark experiments and collect results.
-#
-#   Will invoke hw3_grpc/benchmarks/run_benchmark.py for each experiment:
-#     1. Worker scaling experiment
-#     2. Message batch granularity experiment
-#     3. Query frequency / concurrency experiment
-#     4. Dataset size scaling experiment
-#
-#   Results will be saved to hw3_grpc/benchmarks/results/.
-#   Plots will be saved to hw3_grpc/benchmarks/plots/.
+# Flags:
+#   --all         Run all 4 experiments with standard sizes (default)
+#   --fast        Run all 4 experiments with reduced sizes for fast verification
+#   --experiment  Run a specific experiment: scaling, batch, query, or size
 
-echo "[run_benchmarks.sh] PLACEHOLDER — not yet implemented." >&2
-exit 1
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO_ROOT"
+
+echo "================================================================="
+echo "  HW3 gRPC Real-Time Weather Analytics — Benchmark Suite"
+echo "================================================================="
+
+# Compile HW2 seq if needed for comparison
+if [ ! -f hw2_mpi/src/q8_seq ]; then
+    echo "[run_benchmarks] Compiling HW2 sequential oracle..."
+    g++ -O2 -std=c++17 -o hw2_mpi/src/q8_seq hw2_mpi/src/q8_seq.cpp
+fi
+
+# Generate protobuf stubs if needed
+if [ ! -f hw3_grpc/generated/weather_pb2.py ]; then
+    bash hw3_grpc/scripts/generate_proto.sh
+fi
+
+mkdir -p hw3_grpc/benchmarks/results hw3_grpc/benchmarks/plots
+
+ARGS=()
+for arg in "$@"; do
+    if [ "$arg" = "--all" ]; then
+        ARGS+=(--experiment all)
+    else
+        ARGS+=("$arg")
+    fi
+done
+
+python3 hw3_grpc/benchmarks/run_benchmark.py "${ARGS[@]}"
+
+echo "================================================================="
+echo "  Benchmark suite finished."
+echo "  CSV results:  hw3_grpc/benchmarks/results/"
+echo "  Plots saved:  hw3_grpc/benchmarks/plots/"
+echo "================================================================="
