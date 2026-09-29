@@ -91,6 +91,9 @@ def merge(snapshots: Iterable[AnalyticsSnapshot]) -> AnalyticsSnapshot:
             gs.sum_temperature += st.sum_temperature
             gs.sum_rainfall += st.sum_rainfall
 
+    if total == 0:
+        return AnalyticsSnapshot(k=k)
+
     result = AnalyticsSnapshot(
         total_measurements=total,
         sum_temperature=sum_t,

@@ -84,7 +84,7 @@ The system accepts a continuous stream of weather measurements, partitions the d
      - Global sum, min, max for temperature, humidity, pressure, wind speed, rainfall.
      - Extreme temperature event counters ($T > 40.0^\circ\text{C}$ or $T < 0.0^\circ\text{C}$).
      - Hottest and coldest measurement records (breaking ties by earliest timestamp, then lowest station ID).
-     - Temporal interval counts (bucketed into 3600-second windows: `timestamp // 3600`).
+     - Temporal interval counts (bucketed into 60-second windows: `timestamp // 60`).
      - Per-station statistics (record count, temperature sum, rainfall sum).
 
 3. **Aggregation & Querying**:

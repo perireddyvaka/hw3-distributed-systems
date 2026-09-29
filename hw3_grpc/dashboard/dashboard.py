@@ -16,9 +16,11 @@ import os
 
 import grpc
 
-sys.path.insert(0, "hw3_grpc/generated")
-import weather_pb2
-import weather_pb2_grpc
+try:
+    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
+except ImportError:
+    import weather_pb2
+    import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
 from hw3_grpc.client.query_client import query, format_snapshot
@@ -35,21 +37,20 @@ def dashboard_loop(
 ) -> None:
     print(f"HW3 Real-Time Dashboard — querying {host}:{port} every {interval}s")
     print("Press Ctrl+C to exit.\n")
-    prev_count = -1
-    while True:
-        try:
-            snap = query(host=host, port=port)
-            clear()
-            print(f"[{time.strftime('%H:%M:%S')}] HW3 REAL-TIME WEATHER ANALYTICS DASHBOARD")
-            print(f"Status: {'STREAMING' if snap.total_measurements != prev_count else 'IDLE'}")
-            print(format_snapshot(snap))
-            prev_count = snap.total_measurements
-        except grpc.RpcError as e:
-            print(f"[{time.strftime('%H:%M:%S')}] Coordinator not available: {e.details()}")
-        except KeyboardInterrupt:
-            print("\nDashboard stopped.")
-            break
-        time.sleep(interval)
+    try:
+        while True:
+            try:
+                snap = query(host=host, port=port)
+                clear()
+                print(f"[{time.strftime('%H:%M:%S')}] HW3 REAL-TIME WEATHER ANALYTICS DASHBOARD")
+                print(f"Status: {'STREAMING' if snap.total_measurements != prev_count else 'IDLE'}")
+                print(format_snapshot(snap))
+                prev_count = snap.total_measurements
+            except grpc.RpcError as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Coordinator not available: {e.details()}")
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("\nDashboard stopped.")
 
 
 def main() -> None:

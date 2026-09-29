@@ -3,7 +3,10 @@
 import grpc
 import warnings
 
-import weather_pb2 as weather__pb2
+try:
+    from . import weather_pb2 as weather__pb2
+except (ImportError, ValueError):
+    import weather_pb2 as weather__pb2
 
 GRPC_GENERATED_VERSION = '1.84.0'
 GRPC_VERSION = grpc.__version__

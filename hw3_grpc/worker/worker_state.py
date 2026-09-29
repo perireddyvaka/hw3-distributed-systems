@@ -16,6 +16,7 @@ class WorkerLocalState:
 
     def __init__(self, worker_id: int, k: int = 10) -> None:
         self.worker_id = worker_id
+        self._k = k
         self._lock = threading.Lock()
         self._acc = AnalyticsAccumulator(k=k)
 
@@ -34,3 +35,8 @@ class WorkerLocalState:
     def count(self) -> int:
         with self._lock:
             return self._acc.count
+
+    def reset(self) -> None:
+        """Reset local analytics accumulator to initial empty state."""
+        with self._lock:
+            self._acc = AnalyticsAccumulator(k=self._k)

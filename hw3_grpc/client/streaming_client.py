@@ -19,9 +19,11 @@ from typing import Iterator
 
 import grpc
 
-sys.path.insert(0, "hw3_grpc/generated")
-import weather_pb2
-import weather_pb2_grpc
+try:
+    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
+except ImportError:
+    import weather_pb2
+    import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
 from hw3_grpc.common.models import WeatherRecord
@@ -102,20 +104,29 @@ def stream(
             _batch_generator(dataset_path, batch_size, delay, limit),
             timeout=3600,
         )
+        elapsed = time.perf_counter() - t_start
+        throughput = response.records_received / elapsed if elapsed > 0 else 0
+        stats = {
+            "success": response.success,
+            "records_received": response.records_received,
+            "elapsed_sec": round(elapsed, 4),
+            "throughput_rps": round(throughput, 1),
+            "message": response.message,
+        }
+        return stats
+    except Exception as exc:
+        elapsed = time.perf_counter() - t_start
+        log.error("Streaming failed: %s", exc)
+        return {
+            "success": False,
+            "records_received": 0,
+            "elapsed_sec": round(elapsed, 4),
+            "throughput_rps": 0.0,
+            "error": str(exc),
+            "message": str(exc),
+        }
     finally:
         channel.close()
-
-    elapsed = time.perf_counter() - t_start
-    throughput = response.records_received / elapsed if elapsed > 0 else 0
-
-    stats = {
-        "success": response.success,
-        "records_received": response.records_received,
-        "elapsed_sec": round(elapsed, 4),
-        "throughput_rps": round(throughput, 1),
-        "message": response.message,
-    }
-    return stats
 
 
 def main() -> None:

@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import os
 import random
 import sys
 
@@ -29,6 +30,9 @@ def generate_dataset(
         s  = number of stations (station IDs: 0 to s-1)
     """
     random.seed(seed)
+    parent_dir = os.path.dirname(os.path.abspath(filename))
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
     with open(filename, "w") as f:
         f.write(f"{n} {k} {s}\n")
         for _ in range(n):

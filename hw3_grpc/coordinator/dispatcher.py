@@ -7,13 +7,16 @@ using round-robin assignment, then collects worker state for global aggregation.
 from __future__ import annotations
 import logging
 import sys
+import threading
 from typing import List
 
 import grpc
 
-sys.path.insert(0, "hw3_grpc/generated")
-import weather_pb2
-import weather_pb2_grpc
+try:
+    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
+except ImportError:
+    import weather_pb2
+    import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
 from hw3_grpc.common.aggregation import merge
@@ -72,6 +75,8 @@ class Dispatcher:
         self._channels: List[grpc.Channel] = []
         self._batch_counter: int = 0
 
+        self._lock = threading.Lock()
+
         for addr in worker_addresses:
             ch = grpc.insecure_channel(addr, options=cfg.GRPC_OPTIONS)
             self._channels.append(ch)
@@ -80,8 +85,9 @@ class Dispatcher:
 
     def dispatch(self, batch: weather_pb2.RecordBatch) -> None:
         """Forward batch to the next worker in round-robin order."""
-        worker_idx = self._batch_counter % self._n
-        self._batch_counter += 1
+        with self._lock:
+            worker_idx = self._batch_counter % self._n
+            self._batch_counter += 1
         try:
             ack = self._stubs[worker_idx].ProcessBatch(batch, timeout=30)
             log.debug("Dispatched batch %d to worker %d (ack count=%d)",
@@ -89,6 +95,11 @@ class Dispatcher:
         except grpc.RpcError as e:
             log.error("Failed to dispatch to worker %d: %s", worker_idx, e)
             raise
+
+    def reset(self) -> None:
+        """Reset batch counter for round-robin assignment."""
+        with self._lock:
+            self._batch_counter = 0
 
     def collect_all_states(self, k: int = 10) -> AnalyticsSnapshot:
         """Fetch state from every worker and merge into a global snapshot."""

@@ -19,7 +19,17 @@ for pidfile in "$PID_DIR"/*.pid; do
     pid=$(cat "$pidfile")
     name=$(basename "$pidfile" .pid)
     if kill -0 "$pid" 2>/dev/null; then
-        kill -TERM "$pid" && echo "[stop_system] Stopped $name (PID $pid)"
+        kill -TERM "$pid" 2>/dev/null || true
+        for _ in 1 2 3 4 5 6; do
+            if ! kill -0 "$pid" 2>/dev/null; then
+                break
+            fi
+            sleep 0.5
+        done
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -KILL "$pid" 2>/dev/null || true
+        fi
+        echo "[stop_system] Stopped $name (PID $pid)"
     else
         echo "[stop_system] $name (PID $pid) was not running."
     fi

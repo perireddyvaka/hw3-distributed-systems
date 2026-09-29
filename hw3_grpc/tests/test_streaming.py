@@ -14,9 +14,11 @@ import time
 import grpc
 import pytest
 
-sys.path.insert(0, "hw3_grpc/generated")
-import weather_pb2
-import weather_pb2_grpc
+try:
+    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
+except ImportError:
+    import weather_pb2
+    import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
 from hw3_grpc.common.analytics import AnalyticsAccumulator

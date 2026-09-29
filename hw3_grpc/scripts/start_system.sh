@@ -26,7 +26,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [ "$WORKERS" -lt 1 ]; then
+    echo "Error: --workers must be at least 1 (got $WORKERS)" >&2
+    exit 1
+fi
+
 PID_DIR="/tmp/hw3_pids"
+# Stop any stale running instances first
+if [ -d "$PID_DIR" ]; then
+    bash "$(dirname "$0")/stop_system.sh" 2>/dev/null || true
+fi
 mkdir -p "$PID_DIR"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

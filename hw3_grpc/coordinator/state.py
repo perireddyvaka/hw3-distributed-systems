@@ -41,3 +41,9 @@ class GlobalAnalyticsState:
     def is_stream_done(self) -> bool:
         with self._lock:
             return self._stream_done
+
+    def reset(self) -> None:
+        """Reset global analytics state for a new stream session."""
+        with self._lock:
+            self._snapshot = AnalyticsSnapshot()
+            self._stream_done = False

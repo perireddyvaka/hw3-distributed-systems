@@ -23,9 +23,11 @@ from typing import Iterator
 
 import grpc
 
-sys.path.insert(0, "hw3_grpc/generated")
-import weather_pb2
-import weather_pb2_grpc
+try:
+    from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
+except ImportError:
+    import weather_pb2
+    import weather_pb2_grpc
 
 from hw3_grpc.common import config as cfg
 from hw3_grpc.common.models import AnalyticsSnapshot, MeasurementRef, StationStat
@@ -48,31 +50,32 @@ def _snapshot_to_proto(snap: AnalyticsSnapshot, k: int) -> weather_pb2.Analytics
         for s in top
     ]
     bi = snap.busiest_interval
+    n = snap.total_measurements
     proto = weather_pb2.AnalyticsSnapshot(
-        total_measurements=snap.total_measurements,
+        total_measurements=n,
         avg_temperature=snap.avg_temperature,
-        min_temperature=snap.min_temperature,
-        max_temperature=snap.max_temperature,
+        min_temperature=snap.min_temperature if n > 0 else 0.0,
+        max_temperature=snap.max_temperature if n > 0 else 0.0,
         avg_humidity=snap.avg_humidity,
-        min_humidity=snap.min_humidity,
-        max_humidity=snap.max_humidity,
+        min_humidity=snap.min_humidity if n > 0 else 0.0,
+        max_humidity=snap.max_humidity if n > 0 else 0.0,
         avg_pressure=snap.avg_pressure,
-        min_pressure=snap.min_pressure,
-        max_pressure=snap.max_pressure,
+        min_pressure=snap.min_pressure if n > 0 else 0.0,
+        max_pressure=snap.max_pressure if n > 0 else 0.0,
         total_rainfall=snap.total_rainfall,
-        max_rainfall=snap.max_rainfall,
+        max_rainfall=snap.max_rainfall if n > 0 else 0.0,
         avg_wind_speed=snap.avg_wind_speed,
-        max_wind_speed=snap.max_wind_speed,
+        max_wind_speed=snap.max_wind_speed if n > 0 else 0.0,
         extreme_temperature_events=snap.extreme_temperature_events,
         hottest=weather_pb2.MeasurementRef(
-            timestamp=snap.hottest.timestamp,
-            station_id=snap.hottest.station_id,
-            temperature=snap.hottest.temperature,
+            timestamp=snap.hottest.timestamp if n > 0 else 0,
+            station_id=snap.hottest.station_id if n > 0 else 0,
+            temperature=snap.hottest.temperature if n > 0 else 0.0,
         ),
         coldest=weather_pb2.MeasurementRef(
-            timestamp=snap.coldest.timestamp,
-            station_id=snap.coldest.station_id,
-            temperature=snap.coldest.temperature,
+            timestamp=snap.coldest.timestamp if n > 0 else 0,
+            station_id=snap.coldest.station_id if n > 0 else 0,
+            temperature=snap.coldest.temperature if n > 0 else 0.0,
         ),
         busiest_interval=bi if bi is not None else -1,
         busiest_interval_count=snap.busiest_interval_count,
@@ -97,6 +100,11 @@ class CoordinatorServicer(weather_pb2_grpc.CoordinatorServiceServicer):
         self, request_iterator: Iterator[weather_pb2.RecordBatch], context
     ) -> weather_pb2.StreamResponse:
         """Receive streaming record batches from the client."""
+        with self._stream_lock:
+            if self._global_state.is_stream_done:
+                self._global_state.reset()
+                self._dispatcher.reset()
+                self._total_received = 0
         received = 0
         try:
             for batch in request_iterator:
