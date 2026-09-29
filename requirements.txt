@@ -1,0 +1,26 @@
+# requirements.txt — Top-level project Python dependencies
+#
+# This file lists the union of dependencies needed across all sub-projects.
+# Sub-projects also maintain their own requirements.txt where appropriate.
+#
+# HW2 Python dependencies:
+#   - pandas      (plot_results.py)
+#   - matplotlib  (plot_results.py)
+#
+# HW3 Python dependencies:
+#   See hw3_grpc/requirements.txt for the full HW3 dependency list.
+
+# Shared data/plotting dependencies (used by both HW2 and HW3)
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# gRPC (HW3)
+grpcio>=1.60.0
+protobuf>=4.25.0
+grpcio-tools>=1.60.0
+
+# Testing (HW3 tests)
+pytest>=7.0.0
+
+# NOTE: Exact versions will be pinned after the HW3 implementation iteration.
+# NOTE: Install using: pip install -r requirements.txt

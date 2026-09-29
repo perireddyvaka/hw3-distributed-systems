@@ -1,0 +1,71 @@
+// weather.proto — gRPC service and message definitions for HW3 Weather Analytics
+//
+// STATUS: PLACEHOLDER — schema will be finalized in the next implementation iteration.
+//
+// This file will eventually define:
+//   1. WeatherRecord message: the common data unit (matches HW2 format)
+//        Fields: timestamp, station_id, temperature, humidity, pressure, rainfall, wind_speed
+//   2. Streaming ingestion RPC: client streams WeatherRecord to coordinator
+//   3. Analytics query RPC: query client requests current analytics snapshot
+//   4. AnalyticsResponse message: mirrors the output fields of the HW2 sequential reference
+//   5. Worker/coordinator communication RPCs (if needed): coordinator→worker dispatch
+//
+// DO NOT add real RPC definitions until the implementation iteration is started.
+// Keep this file as a minimal valid placeholder.
+
+syntax = "proto3";
+
+package weather;
+
+// --------------------------------------------------------------------
+// Placeholder message stubs — fields TBD in implementation iteration
+// --------------------------------------------------------------------
+
+// WeatherRecord represents a single sensor measurement.
+// Format matches the HW2 dataset:
+//   timestamp  station_id  temperature  humidity  pressure  rainfall  wind_speed
+message WeatherRecord {
+  // TODO (implementation iteration): add all fields
+}
+
+// AnalyticsResponse will carry the full analytics result set.
+// It must eventually mirror ALL fields output by the HW2 sequential reference (q8_seq.cpp).
+message AnalyticsResponse {
+  // TODO (implementation iteration): add all analytics fields
+}
+
+// AnalyticsQuery is sent by a query/dashboard client to request current state.
+message AnalyticsQuery {
+  // TODO (implementation iteration): add query filter/control fields if needed
+}
+
+// StreamAck is a lightweight acknowledgement returned by the coordinator
+// to the streaming client after receiving a batch/record.
+message StreamAck {
+  // TODO (implementation iteration): add ack fields
+}
+
+// --------------------------------------------------------------------
+// Placeholder service stubs — RPC signatures TBD
+// --------------------------------------------------------------------
+
+// CoordinatorService is the central gRPC service exposed by the coordinator.
+// It will accept a streaming ingestion from the streaming client
+// and respond to analytics queries from the query/dashboard client.
+service CoordinatorService {
+  // TODO (implementation iteration): define streaming ingestion RPC
+  // rpc IngestStream(stream WeatherRecord) returns (StreamAck);
+
+  // TODO (implementation iteration): define analytics query RPC
+  // rpc QueryAnalytics(AnalyticsQuery) returns (AnalyticsResponse);
+}
+
+// WorkerService is the gRPC service exposed by each worker process.
+// The coordinator will call workers to dispatch record batches.
+service WorkerService {
+  // TODO (implementation iteration): define worker record processing RPC
+  // rpc ProcessBatch(stream WeatherRecord) returns (StreamAck);
+
+  // TODO (implementation iteration): define worker state query RPC
+  // rpc GetLocalState(AnalyticsQuery) returns (AnalyticsResponse);
+}

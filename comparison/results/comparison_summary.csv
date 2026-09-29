@@ -1,0 +1,12 @@
+size_label,implementation,N,K,S,workers_or_procs,time_seconds,notes
+# This file is a placeholder for future comparison summary data.
+# It will be populated by compare_benchmarks.py after HW3 benchmarks are run.
+# Columns:
+#   size_label          : small / medium / large / very_large
+#   implementation      : hw2_seq / hw2_mpi / hw3_grpc
+#   N                   : number of records
+#   K                   : top-K stations
+#   S                   : number of stations
+#   workers_or_procs    : number of MPI ranks (HW2) or gRPC workers (HW3)
+#   time_seconds        : wall-clock time in seconds
+#   notes               : any relevant notes

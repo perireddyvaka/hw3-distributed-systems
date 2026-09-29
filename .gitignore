@@ -1,0 +1,63 @@
+# ─── C++ build artefacts ───────────────────────────────────────────────────────
+hw2_mpi/src/q8_seq
+hw2_mpi/src/q8_mpi
+hw2_mpi/scripts/bench_data/
+*.o
+*.out
+
+# ─── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+.venv/
+venv/
+env/
+
+# ─── gRPC generated stubs (regenerate with generate_proto.sh) ──────────────────
+hw3_grpc/generated/*
+!hw3_grpc/generated/.gitkeep
+
+# ─── Datasets (large files — generate locally) ─────────────────────────────────
+hw2_mpi/data/*
+!hw2_mpi/data/.gitkeep
+hw3_grpc/data/generated/*
+!hw3_grpc/data/generated/.gitkeep
+hw3_grpc/data/sample/*
+!hw3_grpc/data/sample/.gitkeep
+comparison/datasets/*
+!comparison/datasets/.gitkeep
+hw2_mpi/scripts/bench_data/
+hw2_mpi/scripts/test_data.txt
+hw2_mpi/scripts/seq_out.txt
+hw2_mpi/scripts/mpi_out_*.txt
+
+# ─── Benchmark / plot output (generated during runs) ──────────────────────────
+hw3_grpc/benchmarks/results/*
+!hw3_grpc/benchmarks/results/.gitkeep
+hw3_grpc/benchmarks/plots/*
+!hw3_grpc/benchmarks/plots/.gitkeep
+hw3_grpc/results/final_results/*
+!hw3_grpc/results/final_results/.gitkeep
+hw3_grpc/results/live_runs/*
+!hw3_grpc/results/live_runs/.gitkeep
+comparison/results/correctness/*
+!comparison/results/correctness/.gitkeep
+comparison/results/performance/*
+!comparison/results/performance/.gitkeep
+comparison/plots/*
+!comparison/plots/.gitkeep
+
+# ─── Misc ──────────────────────────────────────────────────────────────────────
+.DS_Store
+*.log
+*.swp
+*.swo
+.idea/
+.vscode/

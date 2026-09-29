@@ -1,0 +1,27 @@
+# hw3_grpc/requirements.txt
+#
+# Python dependencies for HW3 gRPC Weather Analytics.
+# STATUS: Dependency list is final for known requirements;
+#         exact versions should be pinned during the implementation iteration
+#         after verifying compatibility.
+
+# gRPC core
+grpcio>=1.60.0
+
+# Protocol Buffers Python runtime
+protobuf>=4.25.0
+
+# gRPC tools (used to compile .proto files — dev/build dependency)
+grpcio-tools>=1.60.0
+
+# Testing framework
+pytest>=7.0.0
+
+# Plotting (for benchmark result visualisation)
+matplotlib>=3.7.0
+
+# Data manipulation (for benchmark result analysis)
+pandas>=2.0.0
+
+# NOTE: numpy is a transitive dependency of matplotlib/pandas — no need to pin separately.
+# NOTE: Do NOT add Kafka, Redis, PostgreSQL, or any external infrastructure dependencies here.
