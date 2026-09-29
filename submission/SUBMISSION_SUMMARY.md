@@ -1,7 +1,7 @@
 # HW3 Section 2 Q2 — Submission Summary
 
-**Generated:** 2026-09-29 20:25:41  
-**Total runtime:** 0m 55s  
+**Generated:** 2026-09-29 20:48:04  
+**Total runtime:** 1m 6s  
 **Mode:** STANDARD
 
 ---
@@ -15,10 +15,10 @@
 | `unit_tests` | ✅ PASS | Unit tests: 27 tests passed → saved to submission/tests/unit_tests.txt |
 | `streaming_tests` | ✅ PASS | Streaming tests: 4 passed → submission/tests/streaming_tests.txt |
 | `concurrency_tests` | ✅ PASS | Concurrency tests: 1 passed → submission/tests/concurrency_tests.txt |
-| `correctness_tests` | ❌ FAIL | Correctness: only 11/12 passed — see submission/tests/correctness_tests.txt |
-| `benchmarks` | ✅ PASS | Cached benchmark results copied to submission/benchmarks/ |
+| `correctness_tests` | ✅ PASS | Correctness: 12/12 permutations PASSED → submission/tests/correctness_tests.txt |
+| `benchmarks` | ✅ PASS | Cached benchmark results copied → submission/benchmarks/{results/,plots/} |
 | `memory_plot` | ⏭️ SKIP | Not run |
-| `live_run` | ✅ PASS | Cached live run samples copied |
+| `live_run` | ✅ PASS | Live run captured → submission/live_run/ |
 
 ---
 

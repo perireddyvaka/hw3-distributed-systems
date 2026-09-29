@@ -114,8 +114,10 @@ class CoordinatorServicer(weather_pb2_grpc.CoordinatorServiceServicer):
                 with self._stream_lock:
                     self._total_received += len(batch.records)
 
-            # Stream ended — collect final state
-            log.info("Stream complete. Received %d records total. Collecting final state...", received)
+            # Stream ended — wait for all in-flight dispatches to land before reading state
+            log.info("Stream complete. Received %d records. Flushing dispatch pipeline...", received)
+            self._dispatcher.flush()
+            log.info("Dispatch pipeline flushed. Collecting final state...")
             final_snap = self._dispatcher.collect_all_states(k=self._k)
             self._global_state.update(final_snap)
             self._global_state.mark_stream_done()

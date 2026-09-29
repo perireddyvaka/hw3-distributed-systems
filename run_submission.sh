@@ -212,14 +212,16 @@ if [ "$SKIP_BENCHMARKS" -eq 0 ]; then
 
 else
     info "Skipping benchmarks (--skip-benchmarks) — copying cached results..."
-    # Copy pre-existing benchmark results into submission/
-    if [ -d hw3_grpc/results/final_results ]; then
-        cp -r hw3_grpc/results/final_results/. "$SUB/benchmarks/"
-        # Ensure memory_usage.png is present
+    if [ -d hw3_grpc/benchmarks/results ] && [ -d hw3_grpc/benchmarks/plots ]; then
+        # Copy CSVs into results/ subfolder (correct structure)
+        mkdir -p "$SUB/benchmarks/results" "$SUB/benchmarks/plots"
+        cp hw3_grpc/benchmarks/results/*.csv "$SUB/benchmarks/results/"
+        cp hw3_grpc/benchmarks/plots/*.png   "$SUB/benchmarks/plots/"
+        # Also copy memory plot if available separately
         if [ -f hw3_grpc/benchmarks/plots/memory_usage.png ]; then
             cp hw3_grpc/benchmarks/plots/memory_usage.png "$SUB/benchmarks/plots/"
         fi
-        record "benchmarks" "PASS" "Cached benchmark results copied to submission/benchmarks/"
+        record "benchmarks" "PASS" "Cached benchmark results copied → submission/benchmarks/{results/,plots/}"
     else
         record "benchmarks" "FAIL" "No cached results found; run without --skip-benchmarks"
     fi

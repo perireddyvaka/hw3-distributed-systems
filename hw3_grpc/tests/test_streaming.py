@@ -24,10 +24,12 @@ from hw3_grpc.common.models import WeatherRecord
 from hw3_grpc.dataset.generate_dataset import generate_dataset
 from hw3_grpc.client.streaming_client import stream
 
-# Ports chosen to not clash with the default system
-TEST_COORDINATOR_PORT = 55050
-TEST_WORKER_BASE_PORT = 55060
-STARTUP_WAIT = 3.0  # seconds to wait for processes to start
+# Ports chosen to not clash with other test files.
+# test_correctness uses 55500+, test_concurrency uses 55400+.
+# Spacing: 50 per worker-count variant prevents TIME_WAIT collisions.
+TEST_COORDINATOR_PORT = 55200
+TEST_WORKER_BASE_PORT = 55220
+STARTUP_WAIT = 3.5  # seconds to wait for processes to start
 
 
 def _start_workers(n: int, base_port: int, k: int = 10):
@@ -99,8 +101,11 @@ class TestStreamingPipeline:
     """End-to-end streaming tests with real gRPC processes."""
 
     def _run_pipeline(self, dataset_path: str, n_workers: int, k: int = 5):
-        coord_port = TEST_COORDINATOR_PORT + n_workers
-        worker_base = TEST_WORKER_BASE_PORT + n_workers * 10
+        # Unique ports per worker count: spacing=50 prevents TIME_WAIT reuse
+        # n_workers in {1,2,4} → offsets {0,50,100} → no overlap
+        offset = {1: 0, 2: 50, 4: 100}.get(n_workers, n_workers * 25)
+        coord_port  = TEST_COORDINATOR_PORT + offset
+        worker_base = TEST_WORKER_BASE_PORT + offset
         worker_procs = _start_workers(n_workers, worker_base, k=k)
         coord_proc = _start_coordinator(n_workers, coord_port, worker_base, k=k)
         time.sleep(STARTUP_WAIT)
