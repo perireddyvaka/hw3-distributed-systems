@@ -53,8 +53,9 @@ from hw3_grpc.client.query_client import query
 from hw3_grpc.client.streaming_client import stream
 from hw3_grpc.dataset.generate_dataset import generate_dataset
 
+# Defaults — overridden by --output-dir at runtime
 RESULTS_DIR = REPO_ROOT / "hw3_grpc" / "benchmarks" / "results"
-PLOTS_DIR = REPO_ROOT / "hw3_grpc" / "benchmarks" / "plots"
+PLOTS_DIR   = REPO_ROOT / "hw3_grpc" / "benchmarks" / "plots"
 HW2_SEQ_BIN = REPO_ROOT / "hw2_mpi" / "src" / "q8_seq"
 HW2_SEQ_SRC = REPO_ROOT / "hw2_mpi" / "src" / "q8_seq.cpp"
 
@@ -659,17 +660,36 @@ def main():
         help="Experiment to run: scaling, batch, query, size, or all",
     )
     parser.add_argument("--fast", action="store_true", help="Run with reduced dataset sizes for quick verification")
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=None,
+        help="Root directory for results and plots output. "
+             "Defaults to hw3_grpc/benchmarks/{results,plots}/. "
+             "Pass submission/benchmarks to redirect to the submission folder.",
+    )
     args = parser.parse_args()
 
-    n_records = 50_000 if args.fast else 100_000
+    # ── Resolve output directories ───────────────────────────────────────────
+    global RESULTS_DIR, PLOTS_DIR
+    if args.output_dir:
+        out_root = Path(args.output_dir)
+        RESULTS_DIR = out_root / "results"
+        PLOTS_DIR   = out_root / "plots"
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    n_records    = 50_000 if args.fast else 100_000
     dataset_sizes = [10_000, 25_000, 50_000] if args.fast else [10_000, 50_000, 100_000, 250_000, 500_000]
-    workers_list = [1, 2, 4] if args.fast else [1, 2, 4, 8]
-    batch_sizes = [50, 200, 1000] if args.fast else [10, 50, 100, 500, 1000, 5000]
-    client_counts = [0, 1, 2] if args.fast else [0, 1, 2, 4, 8]
+    workers_list  = [1, 2, 4]              if args.fast else [1, 2, 4, 8]
+    batch_sizes   = [50, 200, 1000]        if args.fast else [10, 50, 100, 500, 1000, 5000]
+    client_counts = [0, 1, 2]             if args.fast else [0, 1, 2, 4, 8]
 
     print("\n" + "#" * 65)
     print("  HW3 gRPC REAL-TIME WEATHER ANALYTICS — BENCHMARK SUITE")
-    print(f"  Mode: {'FAST' if args.fast else 'STANDARD'}")
+    print(f"  Mode:        {'FAST' if args.fast else 'STANDARD'}")
+    print(f"  Results dir: {RESULTS_DIR}")
+    print(f"  Plots dir:   {PLOTS_DIR}")
     print("#" * 65)
 
     if args.experiment in ("scaling", "all"):

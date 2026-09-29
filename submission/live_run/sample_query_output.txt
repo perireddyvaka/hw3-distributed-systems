@@ -1,0 +1,42 @@
+========================================================
+  HW3 WEATHER ANALYTICS — CURRENT SNAPSHOT
+========================================================
+  TOTAL_MEASUREMENTS                    10,000
+
+  AVERAGE_TEMPERATURE                19.879139
+  MIN_TEMPERATURE                    -9.971772
+  MAX_TEMPERATURE                    49.999871
+
+  AVERAGE_HUMIDITY                   55.304033
+  MIN_HUMIDITY                       10.005393
+  MAX_HUMIDITY                       99.997744
+
+  AVERAGE_PRESSURE                  999.732919
+  MIN_PRESSURE                      900.029515
+  MAX_PRESSURE                     1099.990360
+
+  TOTAL_RAINFALL                 501871.931322
+  MAX_RAINFALL                       99.999442
+
+  AVERAGE_WIND_SPEED                 75.303423
+  MAX_WIND_SPEED                    149.993129
+
+  EXTREME_TEMPERATURE_EVENTS             3,291
+
+  HOTTEST  ts=1600007488  st=14  t=49.999871
+  COLDEST  ts=1600002336  st=14  t=-9.971772
+
+  BUSIEST_INTERVAL  bucket=26666694  count=95
+
+  TOP_10_STATIONS:
+    station=   42  count=     227  avg_t=21.899941  rain=11159.412126
+    station=    4  count=     222  avg_t=20.031572  rain=11140.505061
+    station=   12  count=     222  avg_t=18.941125  rain=11882.182150
+    station=    1  count=     221  avg_t=20.253936  rain=11160.713277
+    station=    8  count=     219  avg_t=19.668277  rain=11085.857814
+    station=   13  count=     217  avg_t=19.994782  rain=10919.742624
+    station=   37  count=     216  avg_t=18.943959  rain=10884.188314
+    station=   26  count=     214  avg_t=18.726359  rain=10344.703524
+    station=   19  count=     213  avg_t=21.501209  rain=11260.402977
+    station=   44  count=     213  avg_t=19.211305  rain=10408.694291
+========================================================

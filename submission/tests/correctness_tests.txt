@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/scrciiith/IIITH/MS/Monsoon-26/DS/assignments/hw3/weather-analytics
+configfile: pytest.ini
+collecting ... collected 12 items
+
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[1-small_1k] PASSED [  8%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[1-medium_5k] PASSED [ 16%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[1-large_10k] PASSED [ 25%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[1-prime_99999] PASSED [ 33%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[2-small_1k] PASSED [ 41%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[2-medium_5k] PASSED [ 50%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[2-large_10k] PASSED [ 58%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[2-prime_99999] PASSED [ 66%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-small_1k] FAILED [ 75%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-medium_5k] PASSED [ 83%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-large_10k] PASSED [ 91%]
+hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-prime_99999] PASSED [100%]
+
+=================================== FAILURES ===================================
+__________ TestCorrectnessVsHW2.test_hw3_matches_hw2_seq[4-small_1k] ___________
+hw3_grpc/tests/test_correctness.py:278: in test_hw3_matches_hw2_seq
+    assert stats["success"]
+E   assert False
+----------------------------- Captured stdout call -----------------------------
+Generated 1000 records → /tmp/pytest-of-scrciiith/pytest-2/test_hw3_matches_hw2_seq_4_sma0/small_1k.txt
+------------------------------ Captured log call -------------------------------
+ERROR    streaming_client:streaming_client.py:118 Streaming failed: <_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.INTERNAL
+	details = "<_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:55252: Failed to connect to remote host: Connection refused"
+	debug_error_string = "UNAVAILABLE:failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:55252: Failed to connect to remote host: Connection refused"
+>"
+	debug_error_string = "INTERNAL:<_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:55252: Failed to connect to remote host: Connection refused"
+	debug_error_string = "UNAVAILABLE:failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:55252: Failed to connect to remote host: Connection refused"
+>"
+>
+=========================== short test summary info ============================
+FAILED hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-small_1k]
+======================== 1 failed, 11 passed in 38.91s =========================

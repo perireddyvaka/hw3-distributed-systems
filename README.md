@@ -44,41 +44,44 @@ weather-analytics/
 
 ---
 
-## 2. Quick Start: HW3 gRPC Streaming System
+## 2. Single Entry Point — `run_submission.sh`
 
-### Prerequisites
+**This is the only command you need.** It runs everything and produces a `submission/` folder ready to submit as-is.
+
 ```bash
-# Python dependencies
-pip install grpcio grpcio-tools protobuf pytest matplotlib pandas numpy psutil
+# Full run: all tests + all benchmarks + live demo  (~15-20 min)
+bash run_submission.sh
 
-# Compile HW2 oracle (needed for correctness tests)
-g++ -O2 -std=c++17 -o hw2_mpi/src/q8_seq hw2_mpi/src/q8_seq.cpp
+# Fast mode: reduced dataset sizes  (~5 min)
+bash run_submission.sh --fast
 
-# Generate Protobuf & gRPC stubs
-bash hw3_grpc/scripts/generate_proto.sh
+# Tests + live run only (uses cached benchmark results,  ~3 min)
+bash run_submission.sh --skip-benchmarks
+
+# Benchmarks only
+bash run_submission.sh --skip-tests --skip-live-run
 ```
 
-### Run the Full Test Suite
-```bash
-python3 -m pytest -v
-```
+> **One-time pip prerequisite:** `pip install grpcio grpcio-tools protobuf pytest matplotlib pandas numpy psutil`  
+> The script auto-compiles the HW2 oracle and generates proto stubs on first run.
 
-### Run Correctness Verification (HW3 vs HW2 Oracle)
-```bash
-bash hw3_grpc/scripts/run_correctness.sh         # full 12-test suite
-bash hw3_grpc/scripts/run_correctness.sh --fast  # quick 2-test check
-```
+### Output — `submission/` (submit this folder directly)
 
-### Run All Benchmark Experiments
-```bash
-bash hw3_grpc/scripts/run_benchmarks.sh --all    # full suite (~15-20 min)
-bash hw3_grpc/scripts/run_benchmarks.sh --fast   # reduced sizes (~3 min)
 ```
-
-Results are saved to:
-- `hw3_grpc/benchmarks/results/` — CSV data files
-- `hw3_grpc/benchmarks/plots/`   — PNG plot images (5 plots including memory usage)
-- `hw3_grpc/results/final_results/` — synced submission copies
+submission/
+├── SUBMISSION_SUMMARY.md          ← auto-generated pass/fail report
+├── tests/
+│   ├── unit_tests.txt             ← pytest: analytics & aggregation unit tests
+│   ├── streaming_tests.txt        ← pytest: gRPC streaming integration tests
+│   ├── concurrency_tests.txt      ← pytest: multi-client concurrency tests
+│   └── correctness_tests.txt      ← pytest: 12-permutation HW2 oracle correctness
+├── benchmarks/
+│   ├── results/                   ← 4 CSV files (one per experiment)
+│   └── plots/                     ← 5 PNG files (including memory_usage.png)
+└── live_run/
+    ├── sample_query_output.txt    ← live analytics snapshot (HW3 gRPC)
+    └── sample_oracle_output.txt   ← HW2 C++ oracle output (same dataset)
+```
 
 ---
 

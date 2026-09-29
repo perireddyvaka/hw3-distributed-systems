@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/scrciiith/IIITH/MS/Monsoon-26/DS/assignments/hw3/weather-analytics
+configfile: pytest.ini
+collecting ... collected 1 item
+
+hw3_grpc/tests/test_concurrency.py::TestConcurrency::test_concurrent_queries_during_stream PASSED [100%]
+
+============================== 1 passed in 3.17s ===============================

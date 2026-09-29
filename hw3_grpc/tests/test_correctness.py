@@ -30,11 +30,11 @@ from hw3_grpc.common import config as cfg
 from hw3_grpc.client.streaming_client import stream
 from hw3_grpc.dataset.generate_dataset import generate_dataset
 
-CORR_COORD_PORT = 55200
-CORR_WORKER_BASE = 55210
+CORR_COORD_PORT  = 55500   # base coordinator port for correctness tests
+CORR_WORKER_BASE = 55600   # base worker port for correctness tests
 HW2_SEQ_BIN = "hw2_mpi/src/q8_seq"
 HW2_SEQ_SRC = "hw2_mpi/src/q8_seq.cpp"
-STARTUP_WAIT = 3.0
+STARTUP_WAIT = 3.5
 FLOAT_TOL = 1e-4   # tolerance for floating-point comparisons
 
 
@@ -261,10 +261,15 @@ class TestCorrectnessVsHW2:
         # HW2 reference
         hw2_result = _run_hw2_seq(dataset_path, k)
 
-        # HW3 pipeline — use unique ports per (case × workers) combination
-        port_offset = TEST_CASES.index(case) * 10 + WORKER_COUNTS.index(n_workers)
-        coord_port = CORR_COORD_PORT + port_offset
-        worker_base = CORR_WORKER_BASE + port_offset * 20
+        # HW3 pipeline — use well-spaced unique ports per (workers × case) combination
+        # workers offset: 0,1,2 → spacing 100 each
+        # case offset:    0-3   → spacing 10 each
+        # Total spread: 12 combinations × max(100,10) → fits within [55500, 55900)
+        worker_idx = WORKER_COUNTS.index(n_workers)   # 0, 1, 2
+        case_idx   = TEST_CASES.index(case)            # 0, 1, 2, 3
+        port_offset = worker_idx * 100 + case_idx * 10
+        coord_port  = CORR_COORD_PORT  + port_offset
+        worker_base = CORR_WORKER_BASE + port_offset
 
         procs = _start_system(n_workers, coord_port, worker_base, k)
         try:

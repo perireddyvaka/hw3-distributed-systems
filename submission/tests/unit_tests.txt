@@ -1,0 +1,36 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/scrciiith/IIITH/MS/Monsoon-26/DS/assignments/hw3/weather-analytics
+configfile: pytest.ini
+collecting ... collected 27 items
+
+hw3_grpc/tests/test_analytics.py::TestTieBreaking::test_hottest_by_temperature PASSED [  3%]
+hw3_grpc/tests/test_analytics.py::TestTieBreaking::test_hottest_tie_lower_ts_wins PASSED [  7%]
+hw3_grpc/tests/test_analytics.py::TestTieBreaking::test_hottest_tie_lower_station_wins PASSED [ 11%]
+hw3_grpc/tests/test_analytics.py::TestTieBreaking::test_coldest_by_temperature PASSED [ 14%]
+hw3_grpc/tests/test_analytics.py::TestTieBreaking::test_coldest_tie_lower_ts_wins PASSED [ 18%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_empty PASSED     [ 22%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_single_record PASSED [ 25%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_multiple_records_averages PASSED [ 29%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_extreme_temperature_events PASSED [ 33%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_hottest_measurement PASSED [ 37%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_coldest_measurement PASSED [ 40%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_hottest_tie_breaking PASSED [ 44%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_busiest_interval PASSED [ 48%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_busiest_interval_tie_lower_wins PASSED [ 51%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_station_stats PASSED [ 55%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_top_k_stations_ordering PASSED [ 59%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_top_k_station_tie_lower_id_wins PASSED [ 62%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_rainfall_accumulation PASSED [ 66%]
+hw3_grpc/tests/test_analytics.py::TestAccumulator::test_wind_stats PASSED [ 70%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_equals_sequential PASSED [ 74%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_hottest_consistent PASSED [ 77%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_coldest_consistent PASSED [ 81%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_busiest_interval PASSED [ 85%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_station_stats PASSED [ 88%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_empty_snapshots PASSED [ 92%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_four_workers PASSED [ 96%]
+hw3_grpc/tests/test_aggregation.py::TestMerge::test_merge_two_convenience PASSED [100%]
+
+============================== 27 passed in 0.01s ==============================
