@@ -22,5 +22,8 @@ grpcio-tools>=1.60.0
 # Testing (HW3 tests)
 pytest>=7.0.0
 
+# Process and memory monitoring (benchmarks)
+psutil>=5.9.0
+
 # NOTE: Exact versions will be pinned after the HW3 implementation iteration.
 # NOTE: Install using: pip install -r requirements.txt

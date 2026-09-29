@@ -23,5 +23,8 @@ matplotlib>=3.7.0
 # Data manipulation (for benchmark result analysis)
 pandas>=2.0.0
 
+# Process and memory metrics (for benchmark memory tracking)
+psutil>=5.9.0
+
 # NOTE: numpy is a transitive dependency of matplotlib/pandas — no need to pin separately.
 # NOTE: Do NOT add Kafka, Redis, PostgreSQL, or any external infrastructure dependencies here.

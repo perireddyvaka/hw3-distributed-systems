@@ -160,11 +160,13 @@ def serve(
     worker_base_port: int,
     worker_host: str,
     k: int = 10,
+    worker_addresses: Optional[List[str]] = None,
 ) -> None:
-    worker_addresses = [
-        f"{worker_host}:{worker_base_port + i}" for i in range(num_workers)
-    ]
-    log.info("Coordinator starting with %d workers: %s", num_workers, worker_addresses)
+    if not worker_addresses:
+        worker_addresses = [
+            f"{worker_host}:{worker_base_port + i}" for i in range(num_workers)
+        ]
+    log.info("Coordinator starting with %d workers: %s", len(worker_addresses), worker_addresses)
 
     dispatcher = Dispatcher(worker_addresses)
     global_state = GlobalAnalyticsState()
@@ -197,20 +199,31 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=cfg.COORDINATOR_PORT)
     parser.add_argument("--worker-base-port", type=int, default=cfg.WORKER_BASE_PORT)
     parser.add_argument("--worker-host", type=str, default=cfg.COORDINATOR_HOST)
+    parser.add_argument(
+        "--worker-addresses",
+        type=str,
+        default=None,
+        help="Comma-separated list of worker host:port addresses (e.g. node02:50060,node03:50060)",
+    )
     parser.add_argument("--k", type=int, default=10)
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args()
+
+    worker_addrs = None
+    if args.worker_addresses:
+        worker_addrs = [addr.strip() for addr in args.worker_addresses.split(",") if addr.strip()]
 
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s [Coordinator] %(levelname)s %(message)s",
     )
     serve(
-        num_workers=args.workers,
+        num_workers=args.workers if not worker_addrs else len(worker_addrs),
         port=args.port,
         worker_base_port=args.worker_base_port,
         worker_host=args.worker_host,
         k=args.k,
+        worker_addresses=worker_addrs,
     )
 
 
