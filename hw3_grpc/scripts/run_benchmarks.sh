@@ -41,7 +41,15 @@ for arg in "$@"; do
     fi
 done
 
-python3 hw3_grpc/benchmarks/run_benchmark.py "${ARGS[@]}"
+if [ -f "$REPO_ROOT/.venv/bin/python3" ]; then
+    PYTHON="$REPO_ROOT/.venv/bin/python3"
+elif [ -f "$REPO_ROOT/venv/bin/python3" ]; then
+    PYTHON="$REPO_ROOT/venv/bin/python3"
+else
+    PYTHON="${PYTHON:-python3}"
+fi
+
+"$PYTHON" hw3_grpc/benchmarks/run_benchmark.py "${ARGS[@]}"
 
 echo "================================================================="
 echo "  Benchmark suite finished."

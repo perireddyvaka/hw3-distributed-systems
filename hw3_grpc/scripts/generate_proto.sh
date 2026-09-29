@@ -9,20 +9,28 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PROTO_DIR="$REPO_ROOT/hw3_grpc/proto"
 OUT_DIR="$REPO_ROOT/hw3_grpc/generated"
 
+if [ -f "$REPO_ROOT/.venv/bin/python3" ]; then
+    PYTHON="$REPO_ROOT/.venv/bin/python3"
+elif [ -f "$REPO_ROOT/venv/bin/python3" ]; then
+    PYTHON="$REPO_ROOT/venv/bin/python3"
+else
+    PYTHON="${PYTHON:-python3}"
+fi
+
 echo "[generate_proto] Generating Python gRPC stubs..."
 echo "[generate_proto] Proto:  $PROTO_DIR/weather.proto"
 echo "[generate_proto] Output: $OUT_DIR"
 
 mkdir -p "$OUT_DIR"
 
-python3 -m grpc_tools.protoc \
+"$PYTHON" -m grpc_tools.protoc \
     -I "$PROTO_DIR" \
     --python_out="$OUT_DIR" \
     --grpc_python_out="$OUT_DIR" \
     "$PROTO_DIR/weather.proto"
 
 # Patch weather_pb2_grpc.py to allow both package and standalone import
-python3 -c "
+"$PYTHON" -c "
 path = '$OUT_DIR/weather_pb2_grpc.py'
 with open(path) as f:
     content = f.read()

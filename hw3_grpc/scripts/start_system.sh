@@ -41,28 +41,40 @@ mkdir -p "$PID_DIR"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT"
 
+if [ -f "$REPO_ROOT/.venv/bin/python3" ]; then
+    PYTHON="$REPO_ROOT/.venv/bin/python3"
+elif [ -f "$REPO_ROOT/venv/bin/python3" ]; then
+    PYTHON="$REPO_ROOT/venv/bin/python3"
+else
+    PYTHON="${PYTHON:-python3}"
+fi
+
 echo "[start_system] Generating proto stubs..."
 bash hw3_grpc/scripts/generate_proto.sh
 
 echo "[start_system] Starting $WORKERS workers (base port: $WORKER_BASE)..."
 for i in $(seq 0 $((WORKERS-1))); do
     PORT=$((WORKER_BASE + i))
-    python3 -m hw3_grpc.worker.worker_server \
+    nohup "$PYTHON" -m hw3_grpc.worker.worker_server \
         --id "$i" --port "$PORT" --k "$K" --log-level "$LOG_LEVEL" \
         >> "/tmp/hw3_worker_${i}.log" 2>&1 &
-    echo $! > "$PID_DIR/worker_${i}.pid"
-    echo "[start_system] Worker $i started on port $PORT (PID $(cat $PID_DIR/worker_${i}.pid))"
+    PID=$!
+    disown "$PID" 2>/dev/null || true
+    echo "$PID" > "$PID_DIR/worker_${i}.pid"
+    echo "[start_system] Worker $i started on port $PORT (PID $PID)"
 done
 
 sleep 1
 
 echo "[start_system] Starting coordinator on port $COORD_PORT..."
-python3 -m hw3_grpc.coordinator.server \
+nohup "$PYTHON" -m hw3_grpc.coordinator.server \
     --workers "$WORKERS" --port "$COORD_PORT" \
     --worker-base-port "$WORKER_BASE" --k "$K" --log-level "$LOG_LEVEL" \
     >> "/tmp/hw3_coordinator.log" 2>&1 &
-echo $! > "$PID_DIR/coordinator.pid"
-echo "[start_system] Coordinator started (PID $(cat $PID_DIR/coordinator.pid))"
+PID=$!
+disown "$PID" 2>/dev/null || true
+echo "$PID" > "$PID_DIR/coordinator.pid"
+echo "[start_system] Coordinator started (PID $PID)"
 
 sleep 1
 echo ""

@@ -37,6 +37,7 @@ def dashboard_loop(
 ) -> None:
     print(f"HW3 Real-Time Dashboard — querying {host}:{port} every {interval}s")
     print("Press Ctrl+C to exit.\n")
+    prev_count = -1
     try:
         while True:
             try:
