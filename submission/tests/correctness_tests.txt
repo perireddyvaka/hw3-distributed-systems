@@ -18,4 +18,4 @@ hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_s
 hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-large_10k] PASSED [ 91%]
 hw3_grpc/tests/test_correctness.py::TestCorrectnessVsHW2::test_hw3_matches_hw2_seq[4-prime_99999] PASSED [100%]
 
-============================= 12 passed in 43.93s ==============================
+============================= 12 passed in 43.99s ==============================

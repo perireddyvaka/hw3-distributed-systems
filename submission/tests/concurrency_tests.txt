@@ -7,4 +7,4 @@ collecting ... collected 1 item
 
 hw3_grpc/tests/test_concurrency.py::TestConcurrency::test_concurrent_queries_during_stream PASSED [100%]
 
-============================== 1 passed in 3.16s ===============================
+============================== 1 passed in 3.18s ===============================

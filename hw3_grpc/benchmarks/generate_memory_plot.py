@@ -67,25 +67,27 @@ def main(results_dir: Path = None, plots_dir: Path = None) -> None:
         "grid.alpha":        0.7,
     })
 
-    colours = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
 
     # --- Bar: Memory vs worker count ---
-    ax1.bar(workers, mem_mb, color=colours[: len(workers)], width=0.6, alpha=0.85)
-    ax1.set_xlabel("Number of Workers")
+    x_positions = list(range(len(workers)))
+    bars = ax1.bar(x_positions, mem_mb, color="#1f77b4", width=0.6, alpha=0.85)
+    ax1.set_xlabel("Worker Configuration")
     ax1.set_ylabel("Peak RSS Memory (MB)")
     ax1.set_title("Peak Memory Usage vs Worker Count\n(N=100K records, Batch=500)")
-    ax1.set_xticks(workers)
-    for x, y in zip(workers, mem_mb):
+    ax1.set_xticks(x_positions)
+    ax1.set_xticklabels([f"{w}W" for w in workers])
+    for x, y in zip(x_positions, mem_mb):
         ax1.annotate(
             f"{y:.1f} MB", (x, y),
             textcoords="offset points", xytext=(0, 5),
-            ha="center", fontsize=9,
+            ha="center", fontsize=8,
         )
 
     # --- Scatter: Throughput vs Memory (trade-off) ---
-    for x, y, w, c in zip(mem_mb, tps, workers, colours):
+    cmap = plt.get_cmap("tab10" if len(workers) <= 10 else "tab20")
+    for idx, (x, y, w) in enumerate(zip(mem_mb, tps, workers)):
+        c = cmap(idx % 10)
         ax2.scatter(x, y, color=c, s=110, zorder=5, label=f"{w} workers")
         ax2.annotate(
             f"{w}W", (x, y),
@@ -94,7 +96,7 @@ def main(results_dir: Path = None, plots_dir: Path = None) -> None:
     ax2.set_xlabel("Peak RSS Memory (MB)")
     ax2.set_ylabel("Throughput (records/sec)")
     ax2.set_title("Memory–Throughput Trade-off\nper Worker Configuration")
-    ax2.legend(loc="lower right")
+    ax2.legend(loc="lower right", fontsize=8, ncol=2)
 
     fig.suptitle(
         "HW3 gRPC — Memory Usage Analysis",

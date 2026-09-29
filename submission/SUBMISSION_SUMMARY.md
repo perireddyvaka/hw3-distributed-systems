@@ -1,7 +1,7 @@
 # HW3 Section 2 Q2 — Submission Summary
 
-**Generated:** 2026-09-29 20:48:04  
-**Total runtime:** 1m 6s  
+**Generated:** 2026-09-29 21:30:30  
+**Total runtime:** 2m 1s  
 **Mode:** STANDARD
 
 ---
@@ -16,8 +16,8 @@
 | `streaming_tests` | ✅ PASS | Streaming tests: 4 passed → submission/tests/streaming_tests.txt |
 | `concurrency_tests` | ✅ PASS | Concurrency tests: 1 passed → submission/tests/concurrency_tests.txt |
 | `correctness_tests` | ✅ PASS | Correctness: 12/12 permutations PASSED → submission/tests/correctness_tests.txt |
-| `benchmarks` | ✅ PASS | Cached benchmark results copied → submission/benchmarks/{results/,plots/} |
-| `memory_plot` | ⏭️ SKIP | Not run |
+| `benchmarks` | ✅ PASS | All 4 benchmark experiments completed |
+| `memory_plot` | ✅ PASS | Memory usage plot saved → submission/benchmarks/plots/memory_usage.png |
 | `live_run` | ✅ PASS | Live run captured → submission/live_run/ |
 
 ---
@@ -77,6 +77,8 @@ bash run_submission.sh --skip-tests --skip-live-run
 | Metric | Value |
 |---|---|
 | Correctness tests | 12 / 12 permutations passed (< 10⁻⁵ float tolerance) |
-| Peak throughput | 564,904 rec/s (batch_size=5000) |
-| Median query latency | 3.1–3.6 ms under 8 concurrent clients |
-| Dataset scaling | 500K records in 1.27s (linear O(N)) |
+| Peak streaming throughput | 735,862 rec/s (dataset scaling) / 617,620 rec/s (batch scaling) |
+| Worker scaling speedup | 1.15× speedup at 2 workers (651,495 rec/s) |
+| Median query latency | 2.58–3.54 ms under 1 to 8 concurrent clients |
+| Tail query latency (p95) | < 5.7 ms across all query concurrency loads |
+| Dataset scaling | 500K records in 0.70s (linear O(N)) |

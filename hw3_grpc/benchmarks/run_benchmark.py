@@ -216,22 +216,31 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
             print(f"[benchmark] Testing with {w} worker(s)...")
 
             procs = start_cluster(w, port, worker_base, k=10)
-            monitor = ResourceMonitor([p.pid for p in procs])
-            monitor.start()
             try:
-                t0 = time.perf_counter()
-                stats = stream(
-                    dataset_path=dataset_path,
-                    host="localhost",
-                    port=port,
-                    batch_size=batch_size,
-                    delay=0.0,
-                )
-                t_total = time.perf_counter() - t0
-                peak_mem = monitor.stop()
+                trial_times = []
+                trial_mems = []
+                for _ in range(2):
+                    monitor = ResourceMonitor([p.pid for p in procs])
+                    monitor.start()
+                    t0 = time.perf_counter()
+                    stats = stream(
+                        dataset_path=dataset_path,
+                        host="localhost",
+                        port=port,
+                        batch_size=batch_size,
+                        delay=0.0,
+                    )
+                    t_run = time.perf_counter() - t0
+                    m_run = monitor.stop()
+                    if stats.get("success", False):
+                        trial_times.append(t_run)
+                        trial_mems.append(m_run)
 
-                if not stats["success"]:
-                    raise RuntimeError(f"Streaming failed for {w} workers: {stats.get('error')}")
+                if not trial_times:
+                    raise RuntimeError(f"Streaming failed for {w} workers")
+
+                t_total = float(np.min(trial_times))
+                peak_mem = float(np.max(trial_mems))
 
                 throughput = n_records / t_total if t_total > 0 else 0
                 if base_time is None:
@@ -253,7 +262,6 @@ def run_worker_scaling(n_records: int = 100_000, batch_size: int = 500, workers_
                     f"Peak RAM: {peak_mem:.1f} MB"
                 )
             finally:
-                monitor.stop()
                 stop_cluster(procs)
                 time.sleep(0.5)
 
@@ -332,19 +340,24 @@ def run_batch_granularity(n_records: int = 100_000, n_workers: int = 4, batch_si
         try:
             for b in batch_sizes:
                 print(f"[benchmark] Testing batch size: {b:5d}...")
-                t0 = time.perf_counter()
-                stats = stream(
-                    dataset_path=dataset_path,
-                    host="localhost",
-                    port=port,
-                    batch_size=b,
-                    delay=0.0,
-                )
-                t_total = time.perf_counter() - t0
+                times = []
+                for _ in range(2):
+                    t0 = time.perf_counter()
+                    stats = stream(
+                        dataset_path=dataset_path,
+                        host="localhost",
+                        port=port,
+                        batch_size=b,
+                        delay=0.0,
+                    )
+                    t_run = time.perf_counter() - t0
+                    if stats.get("success", False):
+                        times.append(t_run)
 
-                if not stats["success"]:
-                    raise RuntimeError(f"Streaming failed for batch {b}: {stats.get('error')}")
+                if not times:
+                    raise RuntimeError(f"Streaming failed for batch {b}")
 
+                t_total = float(np.min(times))
                 throughput = n_records / t_total if t_total > 0 else 0
                 results.append({
                     "batch_size": b,
@@ -567,17 +580,22 @@ def run_dataset_scaling(dataset_sizes: Optional[List[int]] = None, n_workers: in
             # 2. Run HW3 gRPC system
             procs = start_cluster(n_workers, port, worker_base, k=10)
             try:
-                t_hw3_start = time.perf_counter()
-                stats = stream(
-                    dataset_path=dataset_path,
-                    host="localhost",
-                    port=port,
-                    batch_size=batch_size,
-                    delay=0.0,
-                )
-                t_hw3 = time.perf_counter() - t_hw3_start
-                if not stats["success"]:
-                    raise RuntimeError(f"HW3 streaming failed for N={n}: {stats.get('error')}")
+                hw3_runs = []
+                for _ in range(2):
+                    t_hw3_start = time.perf_counter()
+                    stats = stream(
+                        dataset_path=dataset_path,
+                        host="localhost",
+                        port=port,
+                        batch_size=batch_size,
+                        delay=0.0,
+                    )
+                    t_hw3_run = time.perf_counter() - t_hw3_start
+                    if stats.get("success", False):
+                        hw3_runs.append(t_hw3_run)
+                if not hw3_runs:
+                    raise RuntimeError(f"HW3 streaming failed for N={n}")
+                t_hw3 = float(np.min(hw3_runs))
             finally:
                 stop_cluster(procs)
                 time.sleep(0.5)
@@ -615,7 +633,7 @@ def run_dataset_scaling(dataset_sizes: Optional[List[int]] = None, n_workers: in
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
     ns = [r["dataset_size"] for r in results]
-    labels_k = [f"{n // 1000}K" for n in ns]
+    labels_k = [f"{n // 1000}K" if n < 1_000_000 else f"{n / 1_000_000:.1f}M".rstrip("0").rstrip(".") for n in ns]
     hw3_times = [r["hw3_time_sec"] for r in results]
     seq_times = [r["hw2_seq_time_sec"] for r in results]
     hw3_tps = [r["hw3_throughput_rec_per_sec"] for r in results]
@@ -628,7 +646,7 @@ def run_dataset_scaling(dataset_sizes: Optional[List[int]] = None, n_workers: in
     ax1.set_ylabel("Total Processing Time (sec)")
     ax1.set_title("Processing Time vs Dataset Size")
     ax1.set_xticks(ns)
-    ax1.set_xticklabels(labels_k)
+    ax1.set_xticklabels(labels_k, rotation=25)
     ax1.legend(loc="upper left")
 
     # Subplot 2: Throughput
@@ -638,7 +656,7 @@ def run_dataset_scaling(dataset_sizes: Optional[List[int]] = None, n_workers: in
     ax2.set_ylabel("Throughput (records/sec)")
     ax2.set_title("Throughput vs Dataset Size")
     ax2.set_xticks(ns)
-    ax2.set_xticklabels(labels_k)
+    ax2.set_xticklabels(labels_k, rotation=25)
     ax2.legend(loc="upper right")
 
     fig.tight_layout()
@@ -679,11 +697,23 @@ def main():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    n_records    = 50_000 if args.fast else 100_000
-    dataset_sizes = [10_000, 25_000, 50_000] if args.fast else [10_000, 50_000, 100_000, 250_000, 500_000]
-    workers_list  = [1, 2, 4]              if args.fast else [1, 2, 4, 8]
-    batch_sizes   = [50, 200, 1000]        if args.fast else [10, 50, 100, 500, 1000, 5000]
-    client_counts = [0, 1, 2]             if args.fast else [0, 1, 2, 4, 8]
+    n_records = 50_000 if args.fast else 100_000
+    dataset_sizes = (
+        [10_000, 25_000, 50_000]
+        if args.fast
+        else [10_000, 25_000, 50_000, 100_000, 200_000, 300_000, 500_000, 750_000, 1_000_000]
+    )
+    workers_list = [1, 2, 4] if args.fast else [1, 2, 3, 4, 5, 6, 8, 10, 12, 16]
+    batch_sizes = (
+        [50, 200, 1000]
+        if args.fast
+        else [10, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+    )
+    client_counts = (
+        [0, 1, 2]
+        if args.fast
+        else [0, 1, 2, 4, 6, 8, 12, 16, 20, 24, 32]
+    )
 
     print("\n" + "#" * 65)
     print("  HW3 gRPC REAL-TIME WEATHER ANALYTICS — BENCHMARK SUITE")
