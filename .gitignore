@@ -2,6 +2,8 @@
 hw2_mpi/src/q8_seq
 hw2_mpi/src/q8_mpi
 hw2_mpi/scripts/bench_data/
+hw2_oracle/
+cluster_env.sh
 *.o
 *.out
 

@@ -37,6 +37,7 @@ info()    { echo -e "${CYAN}[rce_cluster]${RESET} $*"; }
 ok()      { echo -e "${GREEN}[  OK  ]${RESET} $*"; }
 warn()    { echo -e "${YELLOW}[ WARN ]${RESET} $*"; }
 fail()    { echo -e "${RED}[ FAIL ]${RESET} $*"; }
+section() { echo -e "\n${BOLD}${YELLOW}══ $* ══${RESET}"; }
 
 COORD_NODE=""
 WORKER_NODES=()

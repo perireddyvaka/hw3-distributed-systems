@@ -29,14 +29,16 @@ section() { echo -e "\n${BOLD}${YELLOW}══ $* ══${RESET}"; }
 
 # ── Argument Handling ────────────────────────────────────────────────────────
 USE_VENV=1
+FORCE_VENV=0
 CHECK_ONLY=0
 
 for arg in "$@"; do
     case "$arg" in
-        --no-venv)   USE_VENV=0 ;;
-        --check)     CHECK_ONLY=1 ;;
+        --no-venv)     USE_VENV=0 ;;
+        --force-venv)  FORCE_VENV=1; USE_VENV=1 ;;
+        --check)       CHECK_ONLY=1 ;;
         --help|-h)
-            echo "Usage: bash setup_cluster.sh [--no-venv] [--check]"
+            echo "Usage: bash setup_cluster.sh [--no-venv] [--force-venv] [--check]"
             exit 0
             ;;
         *)
@@ -99,33 +101,41 @@ ok "C++ compiler detected: $(g++ --version | head -1)"
 section "Phase 2: Python Environment & Dependencies"
 
 VENV_DIR="$REPO_ROOT/.venv"
+PY_EXEC="$(which python3)"
+PIP_EXEC="$(which pip || which pip3 || echo true)"
 
-if [ "$USE_VENV" -eq 1 ]; then
-    if [ ! -d "$VENV_DIR" ]; then
-        info "Creating virtual environment at $VENV_DIR ..."
-        python3 -m venv "$VENV_DIR"
-    fi
-    # Activate virtual environment
-    # shellcheck disable=SC1091
-    source "$VENV_DIR/bin/activate"
-    ok "Virtual environment active: $VENV_DIR"
-    PY_EXEC="$VENV_DIR/bin/python3"
-    PIP_EXEC="$VENV_DIR/bin/pip"
-else
-    info "Using host Python environment (no-venv mode)."
-    PY_EXEC="$(which python3)"
-    PIP_EXEC="$(which pip || which pip3)"
+# First check: Are required packages already installed in system/user environment?
+ALREADY_INSTALLED=0
+if "$PY_EXEC" -c "import grpc, google.protobuf, pytest, matplotlib, pandas, numpy, psutil" 2>/dev/null; then
+    ALREADY_INSTALLED=1
 fi
 
-if [ "$CHECK_ONLY" -eq 0 ]; then
-    info "Verifying & installing Python dependencies from requirements.txt..."
-    "$PIP_EXEC" install --quiet --upgrade pip 2>/dev/null || true
-    if "$PIP_EXEC" install -r "$REPO_ROOT/requirements.txt"; then
-        ok "All Python requirements installed successfully."
-    else
-        warn "Direct install hit permission issues, attempting with --user flag..."
-        "$PIP_EXEC" install --user -r "$REPO_ROOT/requirements.txt"
-        ok "Python requirements installed via --user."
+if [ "$ALREADY_INSTALLED" -eq 1 ] && [ "$FORCE_VENV" -eq 0 ]; then
+    ok "All required Python packages are already installed in current environment."
+    info "Skipping redundant package download."
+else
+    if [ "$USE_VENV" -eq 1 ]; then
+        if [ ! -d "$VENV_DIR" ]; then
+            info "Creating virtual environment at $VENV_DIR ..."
+            python3 -m venv "$VENV_DIR"
+        fi
+        # Activate virtual environment
+        # shellcheck disable=SC1091
+        source "$VENV_DIR/bin/activate"
+        ok "Virtual environment active: $VENV_DIR"
+        PY_EXEC="$VENV_DIR/bin/python3"
+        PIP_EXEC="$VENV_DIR/bin/pip"
+    fi
+
+    if [ "$CHECK_ONLY" -eq 0 ]; then
+        info "Installing Python dependencies from requirements.txt..."
+        if "$PIP_EXEC" install -r "$REPO_ROOT/requirements.txt"; then
+            ok "All Python requirements installed successfully."
+        else
+            warn "Direct install hit permission issues, attempting with --user flag..."
+            "$PIP_EXEC" install --user -r "$REPO_ROOT/requirements.txt"
+            ok "Python requirements installed via --user."
+        fi
     fi
 fi
 
@@ -232,7 +242,7 @@ cat <<EOF > "$ENV_FILE"
 
 export REPO_ROOT="$REPO_ROOT"
 export PROJECT_ROOT="$REPO_ROOT"
-export PYTHONPATH="\$REPO_ROOT:\$PYTHONPATH"
+export PYTHONPATH="\$REPO_ROOT:\${PYTHONPATH:-}"
 
 # Virtual environment activation
 if [ -f "$VENV_DIR/bin/activate" ]; then
@@ -261,19 +271,20 @@ info "Verifying gRPC server imports and basic components..."
 export PYTHONPATH="$REPO_ROOT:${PYTHONPATH:-}"
 "$PY_EXEC" -c "
 import sys
-from hw3_grpc.proto import weather_pb2, weather_pb2_grpc
+from hw3_grpc.generated import weather_pb2, weather_pb2_grpc
 from hw3_grpc.coordinator.server import CoordinatorServicer
 from hw3_grpc.coordinator.dispatcher import Dispatcher
-from hw3_grpc.worker.analytics import IncrementalAnalyticsAccumulator
-from hw3_grpc.coordinator.aggregator import AggregateState
+from hw3_grpc.common.analytics import AnalyticsAccumulator
+from hw3_grpc.common.models import WeatherRecord
+from hw3_grpc.common.aggregation import merge
 
-acc = IncrementalAnalyticsAccumulator(k=10)
-rec = weather_pb2.WeatherRecord(
+acc = AnalyticsAccumulator(k=10)
+rec = WeatherRecord(
     timestamp=1600000000, station_id=1, temperature=25.0,
     humidity=50.0, pressure=1013.25, rainfall=5.0, wind_speed=15.0
 )
-acc.update_single(rec)
-snap = acc.snapshot(worker_id=0)
+acc.add(rec)
+snap = acc.snapshot()
 assert snap.total_measurements == 1, 'Accumulator measurement count mismatch'
 print('  Smoke test PASSED: accumulator, protobuf, and gRPC modules operational.')
 "
