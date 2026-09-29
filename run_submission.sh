@@ -2,8 +2,8 @@
 # =============================================================================
 #  run_submission.sh — HW3 Single Entry Point
 #
-#  Runs all tests, benchmarks, and live-run demonstrations, then deposits
-#  every result into  submission/  ready for direct submission.
+#  Runs all tests, benchmarks, and live-run demonstrations, and compiles
+#  all evaluation results and artifacts into the submission/ directory.
 #
 #  Usage (from repo root):
 #    bash run_submission.sh                  # full run (~15-20 min)
@@ -436,5 +436,5 @@ for key in compile_hw2 proto_gen unit_tests streaming_tests concurrency_tests co
     printf "    %s %-25s %s\n" "$icon" "$key" "${val#*|}"
 done
 echo ""
-echo -e "  ${BOLD}submission/ is ready for submission.${RESET}"
+echo -e "  ${BOLD}All deliverables successfully generated in submission/.${RESET}"
 echo -e "${BOLD}${GREEN}════════════════════════════════════════════════════════════${RESET}"
